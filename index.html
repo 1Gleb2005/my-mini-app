@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Mini App</title>
+    <script src="https://telegram.org"></script>
+    <style>
+        body {
+            background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 85%;
+            max-width: 320px;
+        }
+
+        .menu-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .menu-btn:active {
+            transform: scale(0.98);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #0088cc;
+        }
+
+        .icon {
+            font-size: 24px;
+            filter: drop-shadow(0 0 5px #0088cc);
+        }
+
+        .status {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+            display: block;
+        }
+
+        h1 {
+            font-size: 22px;
+            margin-bottom: 40px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Центр Управления</h1>
+
+    <div class="container">
+        <button class="menu-btn" onclick="send('inventory')">
+            <div>
+                <span>Инвентарь</span>
+                <span class="status">Трюм заполнен на 40%</span>
+            </div>
+            <span class="icon">📦</span>
+        </button>
+
+        <button class="menu-btn" onclick="send('rocket')">
+            <div>
+                <span>Ракета</span>
+                <span class="status">К запуску готов</span>
+            </div>
+            <span class="icon">🚀</span>
+        </button>
+
+        <button class="menu-btn" onclick="send('cases')">
+            <div>
+                <span>Кейсы</span>
+                <span class="status">Доступно: 3 шт.</span>
+            </div>
+            <span class="icon">🛸</span>
+        </button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.setHeaderColor('#1b2735');
+
+        function send(action) {
+            tg.sendData(action);
+        }
+    </script>
+</body>
+</html>
