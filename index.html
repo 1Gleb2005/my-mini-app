@@ -3,152 +3,287 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Space Mini App</title>
+    <title>Space Hub 2026</title>
     <script src="https://telegram.org"></script>
     <style>
+        :root {
+            --bg-dark: #090a0f;
+            --accent: #0088cc;
+            --success: #00ffa3;
+            --error: #ff416c;
+            --stars: #f7c04a;
+        }
+
         body {
-            background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
+            background: radial-gradient(circle at center, #1b2735 0%, var(--bg-dark) 100%);
             color: #ffffff;
             font-family: 'Inter', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            overflow: hidden;
+            margin: 0; padding: 0;
+            min-height: 100vh; overflow: hidden;
         }
 
-        /* Скрываем все разделы по умолчанию */
+        /* ФОНОВАЯ АНИМАЦИЯ (ДЕНЬГИ И ПОРТФЕЛИ) */
+        #money-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 1; opacity: 0.3;
+        }
+
+        .top-right-back {
+            position: fixed; top: 20px; right: 20px;
+            width: 40px; height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px; display: none;
+            align-items: center; justify-content: center;
+            z-index: 1000; backdrop-filter: blur(10px); cursor: pointer;
+        }
+
         .page {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100vh;
-            animation: fadeIn 0.3s ease;
+            display: none; flex-direction: column; align-items: center;
+            width: 100%; height: 100vh; padding-top: 40px;
+            position: relative; z-index: 10; box-sizing: border-box;
         }
+        .page.active { display: flex; }
 
-        /* Активный раздел */
-        .page.active {
-            display: flex;
-        }
-
-        .container {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            width: 85%;
-            max-width: 320px;
-        }
-
+        /* МЕНЮ */
+        .container { display: flex; flex-direction: column; gap: 12px; width: 85%; max-width: 340px; }
         .menu-btn {
             background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            color: white;
+            backdrop-filter: blur(10px); color: white;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 16px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
+            padding: 20px; border-radius: 20px; font-weight: 600;
+            cursor: pointer; text-align: center; transition: 0.2s;
         }
+        .btn-inventory { background: linear-gradient(135deg, #5d4037 0%, #3e2723 100%); }
+        .btn-rocket { background: linear-gradient(135deg, #d32f2f 0%, #388e3c 100%); }
+        .menu-btn:active { transform: scale(0.95); }
 
-        .menu-btn:active {
-            transform: scale(0.98);
-            background: rgba(255, 255, 255, 0.15);
-            border-color: #0088cc;
+        /* ГРАФИК (КРИПТО-КРАШ) */
+        .game-window {
+            width: 90%; max-width: 360px; background: rgba(0,0,0,0.6);
+            border-radius: 24px; border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden; margin-bottom: 15px;
         }
-
-        .icon { font-size: 24px; filter: drop-shadow(0 0 5px #0088cc); }
-        .status { font-size: 12px; color: #888; margin-top: 5px; display: block; text-align: left; }
-        h1 { font-size: 22px; margin-bottom: 40px; letter-spacing: 1px; text-transform: uppercase; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        #chart-box { height: 220px; width: 100%; position: relative; }
+        #multiplier {
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 50px; font-weight: 900; z-index: 5; text-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
+        #graph-canvas { width: 100%; height: 100%; }
+        .play-btn {
+            width: 100%; padding: 16px; border: none; border-radius: 16px;
+            font-weight: bold; font-size: 18px; cursor: pointer; color: white;
+            background: var(--accent); margin-top: 10px; transition: 0.3s;
+        }
+        .btn-stop { background: #ff9800; }
+
+        /* ИНВЕНТАРЬ */
+        .list-container { width: 90%; max-width: 340px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+        .item-card {
+            background: rgba(255,255,255,0.05); border-radius: 16px; padding: 15px;
+            display: flex; align-items: center; justify-content: space-between;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .item-card img { width: 40px; height: 40px; }
+
+        /* ПРОФИЛЬ */
+        .profile-card {
+            background: rgba(255,255,255,0.05); width: 85%; max-width: 340px;
+            border-radius: 24px; padding: 20px; border: 1px solid var(--accent);
+            text-align: center;
+        }
+        .avatar { width: 80px; height: 80px; border-radius: 50%; background: var(--accent); margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 30px; }
+
+        h1 { font-size: 22px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 25px; }
     </style>
 </head>
 <body>
 
-    <!-- ГЛАВНАЯ -->
+    <canvas id="money-canvas"></canvas>
+    <div id="btn-back" class="top-right-back" onclick="showPage('main-page')">✕</div>
+
+    <!-- МЕНЮ -->
     <div id="main-page" class="page active">
-        <h1>Центр Управления</h1>
+        <h1>Control Center</h1>
         <div class="container">
-            <button class="menu-btn" onclick="showPage('inventory-page')">
-                <div>
-                    <span>Инвентарь</span>
-                    <span class="status">Трюм заполнен на 40%</span>
-                </div>
-                <span class="icon">📦</span>
-            </button>
-
-            <button class="menu-btn" onclick="showPage('rocket-page')">
-                <div>
-                    <span>Ракета</span>
-                    <span class="status">К запуску готов</span>
-                </div>
-                <span class="icon">🚀</span>
-            </button>
-
-            <button class="menu-btn" onclick="showPage('cases-page')">
-                <div>
-                    <span>Кейсы</span>
-                    <span class="status">Доступно: 3 шт.</span>
-                </div>
-                <span class="icon">🛸</span>
-            </button>
+            <button class="menu-btn" onclick="showPage('profile-page')">Профиль</button>
+            <button class="menu-btn btn-inventory" onclick="showPage('inventory-page')">Инвентарь</button>
+            <button class="menu-btn btn-rocket" onclick="showPage('rocket-page')">Ракета (График)</button>
+            <button class="menu-btn" onclick="showPage('cases-page')">Кейсы</button>
         </div>
     </div>
 
-    <!-- РАЗДЕЛ ИНВЕНТАРЬ -->
+    <!-- ПРОФИЛЬ -->
+    <div id="profile-page" class="page">
+        <h1>Профиль</h1>
+        <div class="profile-card">
+            <div class="avatar">👨‍🚀</div>
+            <h3 id="user-name">Explorer</h3>
+            <p style="color: #888; font-size: 14px;">Статус: Космический волк</p>
+            <hr style="border: 0.5px solid rgba(255,255,255,0.1); margin: 15px 0;">
+            <div style="display:flex; justify-content:space-around;">
+                <div><small>Баланс</small><br><b>0.00 TON</b></div>
+                <div><small>Звезды</small><br><b style="color:var(--stars)">⭐ 150</b></div>
+            </div>
+            <button class="play-btn" style="background:#28a745; font-size: 14px; padding: 10px;">Привязать Кошелек</button>
+        </div>
+    </div>
+
+    <!-- ИНВЕНТАРЬ -->
     <div id="inventory-page" class="page">
-        <h1>📦 Инвентарь</h1>
-        <p>Ваши ресурсы отобразятся здесь</p>
+        <h1>Ваши Подарки</h1>
+        <div class="list-container">
+            <div class="item-card">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <img src="https://fonts.gstatic.com">
+                    <div><b>Homemade Cake</b><br><small style="color:#888;">Limited Edition</small></div>
+                </div>
+                <b style="color:var(--stars)">⭐ 15</b>
+            </div>
+            <div class="item-card">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <img src="https://fonts.gstatic.com">
+                    <div><b>Golden Crown</b><br><small style="color:#888;">Epic Gift</small></div>
+                </div>
+                <b style="color:var(--stars)">⭐ 2500</b>
+            </div>
+        </div>
     </div>
 
-    <!-- РАЗДЕЛ РАКЕТА -->
+    <!-- РАКЕТА (ГРАФИК) -->
     <div id="rocket-page" class="page">
-        <h1>🚀 Ракета</h1>
-        <p>Подготовка к гиперпрыжку...</p>
+        <h1>Market Crash</h1>
+        <div class="game-window">
+            <div id="chart-box">
+                <div id="multiplier">1.00x</div>
+                <canvas id="graph-canvas"></canvas>
+            </div>
+        </div>
+        <div class="container">
+            <button id="game-btn" class="play-btn" onclick="toggleGame()">СТАВКА</button>
+        </div>
     </div>
 
-    <!-- РАЗДЕЛ КЕЙСЫ -->
-    <div id="cases-page" class="page">
-        <h1>🛸 Кейсы</h1>
-        <p>Откройте секретные контейнеры</p>
-    </div>
+    <div id="cases-page" class="page"><h1>Кейсы</h1><p>Нет доступных контейнеров</p></div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.setHeaderColor('#1b2735');
+        document.getElementById('user-name').innerText = tg.initDataUnsafe.user?.first_name || "Explorer";
 
-        // Функция переключения страниц
         function showPage(pageId) {
-            // Скрываем все страницы
-            document.querySelectorAll('.page').forEach(page => {
-                page.classList.remove('active');
-            });
-            
-            // Показываем нужную
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
+            document.getElementById('btn-back').style.display = (pageId === 'main-page' ? 'none' : 'flex');
+            if (pageId === 'main-page') tg.BackButton.hide(); else tg.BackButton.show();
+        }
+        tg.BackButton.onClick(() => showPage('main-page'));
 
-            // Показываем кнопку "Назад" в Telegram
-            tg.BackButton.show();
+        /* ГРАФИК КРАШ */
+        const canvas = document.getElementById('graph-canvas');
+        const ctx = canvas.getContext('2d');
+        let isRunning = false;
+        let mult = 1.00;
+        let crashAt = 0;
+        let gameLoop;
+
+        function toggleGame() {
+            if (!isRunning) startGame();
+            else stopGame();
         }
 
-        // Обработка кнопки "Назад" в Telegram
-        tg.BackButton.onClick(() => {
-            showPage('main-page');
-            tg.BackButton.hide();
-        });
+        function startGame() {
+            isRunning = true;
+            mult = 1.00;
+            crashAt = (Math.random() * 3 + 1.1).toFixed(2);
+            const btn = document.getElementById('game-btn');
+            btn.innerText = "ЗАБРАТЬ";
+            btn.classList.add('btn-stop');
+            
+            gameLoop = setInterval(() => {
+                mult += 0.01;
+                document.getElementById('multiplier').innerText = mult.toFixed(2) + "x";
+                drawChart();
+                if (mult >= crashAt) endGame(true);
+            }, 50);
+        }
+
+        function stopGame() {
+            endGame(false);
+        }
+
+        function endGame(crashed) {
+            clearInterval(gameLoop);
+            isRunning = false;
+            const btn = document.getElementById('game-btn');
+            const txt = document.getElementById('multiplier');
+            btn.innerText = "СТАВКА";
+            btn.classList.remove('btn-stop');
+            
+            if (crashed) {
+                txt.style.color = "#ff416c";
+                tg.HapticFeedback.notificationOccurred('error');
+            } else {
+                txt.style.color = "#00ffa3";
+                tg.HapticFeedback.notificationOccurred('success');
+            }
+            setTimeout(() => { txt.style.color = "white"; }, 2000);
+        }
+
+        function drawChart() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            
+            const w = canvas.width;
+            const h = canvas.height;
+            const x = (mult - 1) * (w / 3);
+            const y = h - (Math.pow(mult - 1, 1.6) * 40);
+
+            // Линия
+            ctx.beginPath();
+            ctx.strokeStyle = "#00ffa3";
+            ctx.lineWidth = 4;
+            ctx.moveTo(0, h);
+            ctx.quadraticCurveTo(x / 2, h, x, y);
+            ctx.stroke();
+
+            // Градиент заливки
+            const grad = ctx.createLinearGradient(0, 0, 0, h);
+            grad.addColorStop(0, "rgba(0, 255, 163, 0.2)");
+            grad.addColorStop(1, "transparent");
+            ctx.fillStyle = grad;
+            ctx.lineTo(x, h);
+            ctx.lineTo(0, h);
+            ctx.fill();
+        }
+
+        /* ФОН (ДЕНЬГИ И ПОРТФЕЛИ) */
+        const mCanvas = document.getElementById('money-canvas');
+        const mCtx = mCanvas.getContext('2d');
+        const icons = ['💵', '💼', '⭐', '💼'];
+        let particles = [];
+
+        function initMoney() {
+            mCanvas.width = window.innerWidth;
+            mCanvas.height = window.innerHeight;
+            for(let i=0; i<40; i++) particles.push({
+                x: Math.random()*mCanvas.width, y: Math.random()*mCanvas.height,
+                s: Math.random()*2+1, txt: icons[Math.floor(Math.random()*icons.length)]
+            });
+        }
+
+        function drawMoney() {
+            mCtx.clearRect(0,0,mCanvas.width, mCanvas.height);
+            mCtx.font = "20px serif";
+            particles.forEach(p => {
+                p.y += p.s;
+                if(p.y > mCanvas.height) p.y = -20;
+                mCtx.fillText(p.txt, p.x, p.y);
+            });
+            requestAnimationFrame(drawMoney);
+        }
+        initMoney(); drawMoney();
     </script>
 </body>
 </html>
