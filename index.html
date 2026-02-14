@@ -81,7 +81,7 @@
             transform: scale(0.96);
         }
 
-        /* Баланс - пустой */
+        /* Баланс */
         .balance-row {
             display: flex;
             justify-content: space-around;
@@ -408,7 +408,151 @@
             margin-bottom: 20px;
         }
 
-        .ton-connect-qr {
+        .custom-amount-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .custom-amount-field {
+            flex: 1;
+            background: #000000;
+            border: 2px solid #8a2be2;
+            border-radius: 30px;
+            padding: 15px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            outline: none;
+        }
+
+        .custom-amount-field:focus {
+            border-color: #9b4dff;
+            box-shadow: 0 0 10px #8a2be2;
+        }
+
+        .custom-amount-btn {
+            background: #8a2be2;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 15px 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .custom-amount-btn:active {
+            transform: scale(0.96);
+        }
+
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .preset-item {
+            background: #000000;
+            border: 2px solid #8a2be2;
+            border-radius: 16px;
+            padding: 15px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(138, 43, 226, 0.3);
+        }
+
+        .preset-item:active {
+            transform: scale(0.95);
+        }
+
+        .preset-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+            color: #8a2be2;
+        }
+
+        .preset-amount {
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        /* Чек для оплаты */
+        .check-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .check-modal.active {
+            display: flex;
+        }
+
+        .check-content {
+            background: #000000;
+            border: 2px solid #8a2be2;
+            border-radius: 30px;
+            padding: 30px;
+            max-width: 320px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 0 50px rgba(138, 43, 226, 0.5);
+        }
+
+        .check-title {
+            color: #8a2be2;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .check-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            color: #8a2be2;
+        }
+
+        .check-details {
+            color: white;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .check-amount {
+            color: #8a2be2;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .check-address {
+            background: #1a1a1a;
+            border: 1px solid #8a2be2;
+            border-radius: 16px;
+            padding: 12px;
+            color: #8a2be2;
+            font-size: 12px;
+            margin-bottom: 20px;
+            word-break: break-all;
+        }
+
+        .check-qr {
             width: 200px;
             height: 200px;
             background: #ffffff;
@@ -419,149 +563,49 @@
             justify-content: center;
             font-size: 40px;
             color: #000000;
-            position: relative;
-            overflow: hidden;
         }
 
-        .ton-connect-text {
-            color: #8a2be2;
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
-
-        .wallets-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
+        .check-buttons {
+            display: flex;
             gap: 10px;
-            margin-bottom: 20px;
         }
 
-        .wallet-item {
+        .check-btn {
+            flex: 1;
             background: #000000;
             border: 2px solid #8a2be2;
-            border-radius: 16px;
-            padding: 15px 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .wallet-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(138, 43, 226, 0.3);
-        }
-
-        .wallet-item:active {
-            transform: scale(0.95);
-        }
-
-        .wallet-icon {
-            font-size: 32px;
-            margin-bottom: 8px;
-            color: #8a2be2;
-        }
-
-        .wallet-name {
-            color: white;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .wallet-badge {
-            background: #8a2be2;
-            color: white;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 10px;
-            margin-top: 5px;
-            display: inline-block;
-        }
-
-        .ton-connect-button {
-            background: #8a2be2;
-            color: white;
-            border: none;
             border-radius: 30px;
-            padding: 16px;
-            font-size: 18px;
-            font-weight: 700;
-            width: 100%;
+            padding: 15px;
+            color: #8a2be2;
+            font-weight: 600;
+            font-size: 16px;
             cursor: pointer;
             transition: all 0.2s;
         }
 
-        .ton-connect-button:active {
-            transform: scale(0.96);
-            box-shadow: 0 0 20px #8a2be2;
-        }
-
-        .view-all-wallets {
-            color: #8a2be2;
-            font-size: 14px;
-            margin-top: 15px;
-            cursor: pointer;
-            text-decoration: underline;
-        }
-
-        /* Telegram Stars пополнение */
-        .stars-section {
-            background: #000000;
-            border-radius: 20px;
-            padding: 20px;
-            border: 2px solid #8a2be2;
-            margin-bottom: 16px;
-        }
-
-        .stars-title {
-            color: #8a2be2;
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .stars-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .stars-item {
-            background: #000000;
-            border: 2px solid #8a2be2;
-            border-radius: 16px;
-            padding: 20px 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .stars-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(138, 43, 226, 0.3);
-        }
-
-        .stars-item:active {
-            transform: scale(0.95);
-        }
-
-        .stars-icon {
-            font-size: 32px;
-            margin-bottom: 10px;
-            color: #8a2be2;
-        }
-
-        .stars-amount {
+        .check-btn.pay {
+            background: #8a2be2;
             color: white;
-            font-weight: 700;
-            font-size: 18px;
-            margin-bottom: 5px;
         }
 
-        .stars-price {
+        .check-btn:active {
+            transform: scale(0.96);
+        }
+
+        .check-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
             color: #8a2be2;
-            font-size: 14px;
+            font-size: 24px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 1px solid #8a2be2;
         }
 
         /* Инвентарь - пустой */
@@ -704,100 +748,14 @@
         .bet-mult {
             color: #2ecc71;
         }
-
-        .bet-crashed {
-            color: #ff4757;
-        }
-
-        /* Терминал для админа */
-        .admin-terminal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.95);
-            z-index: 2000;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .admin-terminal.active {
-            display: block;
-        }
-
-        .terminal-content {
-            background: #000000;
-            border: 2px solid #8a2be2;
-            border-radius: 20px;
-            padding: 20px;
-            max-width: 400px;
-            margin: 50px auto;
-        }
-
-        .terminal-title {
-            color: #8a2be2;
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .terminal-input {
-            width: 100%;
-            background: #000000;
-            border: 1px solid #8a2be2;
-            border-radius: 30px;
-            padding: 12px;
-            color: white;
-            margin-bottom: 10px;
-            outline: none;
-        }
-
-        .terminal-select {
-            width: 100%;
-            background: #000000;
-            border: 1px solid #8a2be2;
-            border-radius: 30px;
-            padding: 12px;
-            color: white;
-            margin-bottom: 10px;
-            outline: none;
-        }
-
-        .terminal-button {
-            background: #8a2be2;
-            color: white;
-            border: none;
-            border-radius: 30px;
-            padding: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            width: 100%;
-            margin-bottom: 10px;
-            cursor: pointer;
-        }
-
-        .terminal-close {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            color: #8a2be2;
-            font-size: 30px;
-            cursor: pointer;
-        }
     </style>
-    
-    <!-- TON Connect библиотека -->
-    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
 </head>
 <body>
     <div class="game-container">
         <!-- CONTROL CENTER заголовок -->
         <div class="control-center-header">CONTROL CENTER</div>
 
-        <!-- Баланс - пустой -->
+        <!-- Баланс -->
         <div class="balance-row">
             <div class="balance-item">
                 <span class="currency-icon">TON</span>
@@ -841,72 +799,66 @@
                 </div>
             </div>
 
-            <!-- TON Connect -->
+            <!-- Пополнение TON -->
             <div class="ton-connect-section">
-                <div class="ton-connect-title">Connect your TON wallet</div>
-                <div class="ton-connect-qr" id="tonQRCode">
-                    TON
-                </div>
-                <div class="ton-connect-text">Scan with your mobile wallet</div>
+                <div class="ton-connect-title">💎 Пополнить TON</div>
                 
-                <div class="wallets-grid">
-                    <div class="wallet-item" onclick="connectWallet('telegram')">
-                        <div class="wallet-icon">✈️</div>
-                        <div class="wallet-name">Wallet in Telegram</div>
-                    </div>
-                    <div class="wallet-item" onclick="connectWallet('tonkeeper')">
-                        <div class="wallet-icon">TON</div>
-                        <div class="wallet-name">Tonkeeper</div>
-                        <div class="wallet-badge">Popular</div>
-                    </div>
-                    <div class="wallet-item" onclick="connectWallet('mytonwallet')">
-                        <div class="wallet-icon">📱</div>
-                        <div class="wallet-name">MyTonWallet</div>
-                    </div>
-                    <div class="wallet-item" onclick="connectWallet('all')">
-                        <div class="wallet-icon">🔍</div>
-                        <div class="wallet-name">View all wallets</div>
-                    </div>
+                <!-- Поле для своей суммы -->
+                <div class="custom-amount-input">
+                    <input type="number" id="tonAmount" class="custom-amount-field" placeholder="Своя сумма" min="1" value="10">
+                    <button class="custom-amount-btn" onclick="createTonCheckFromInput()">Оплатить</button>
                 </div>
                 
-                <button class="ton-connect-button" onclick="tonConnect()">
-                    TON Connect
-                </button>
-                
-                <div class="view-all-wallets" onclick="showAllWallets()">
-                    View all wallets →
+                <!-- Быстрые суммы -->
+                <div class="preset-grid">
+                    <div class="preset-item" onclick="document.getElementById('tonAmount').value = '10'">
+                        <div class="preset-icon">💎</div>
+                        <div class="preset-amount">10 TON</div>
+                    </div>
+                    <div class="preset-item" onclick="document.getElementById('tonAmount').value = '25'">
+                        <div class="preset-icon">💎</div>
+                        <div class="preset-amount">25 TON</div>
+                    </div>
+                    <div class="preset-item" onclick="document.getElementById('tonAmount').value = '50'">
+                        <div class="preset-icon">💎</div>
+                        <div class="preset-amount">50 TON</div>
+                    </div>
+                    <div class="preset-item" onclick="document.getElementById('tonAmount').value = '100'">
+                        <div class="preset-icon">💎</div>
+                        <div class="preset-amount">100 TON</div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Telegram Stars пополнение -->
-            <div class="stars-section">
-                <div class="stars-title">Telegram Stars ⭐</div>
-                <div class="stars-grid">
-                    <div class="stars-item" onclick="buyStars(50)">
-                        <div class="stars-icon">⭐</div>
-                        <div class="stars-amount">50 Stars</div>
-                        <div class="stars-price">50 ⭐</div>
-                    </div>
-                    <div class="stars-item" onclick="buyStars(100)">
-                        <div class="stars-icon">⭐</div>
-                        <div class="stars-amount">100 Stars</div>
-                        <div class="stars-price">100 ⭐</div>
-                    </div>
-                    <div class="stars-item" onclick="buyStars(250)">
-                        <div class="stars-icon">⭐</div>
-                        <div class="stars-amount">250 Stars</div>
-                        <div class="stars-price">250 ⭐</div>
-                    </div>
-                    <div class="stars-item" onclick="buyStars(500)">
-                        <div class="stars-icon">⭐</div>
-                        <div class="stars-amount">500 Stars</div>
-                        <div class="stars-price">500 ⭐</div>
-                    </div>
+            <!-- Пополнение Stars -->
+            <div class="ton-connect-section">
+                <div class="ton-connect-title">⭐ Пополнить Stars</div>
+                
+                <!-- Поле для своей суммы -->
+                <div class="custom-amount-input">
+                    <input type="number" id="starsAmount" class="custom-amount-field" placeholder="Своя сумма" min="1" value="50">
+                    <button class="custom-amount-btn" onclick="createStarsCheckFromInput()">Оплатить</button>
                 </div>
                 
-                <button class="ton-connect-button" onclick="buyStars(1000)" style="background: #2AABEE;">
-                    Купить через Telegram Stars
-                </button>
+                <!-- Быстрые суммы -->
+                <div class="preset-grid">
+                    <div class="preset-item" onclick="document.getElementById('starsAmount').value = '50'">
+                        <div class="preset-icon">⭐</div>
+                        <div class="preset-amount">50 Stars</div>
+                    </div>
+                    <div class="preset-item" onclick="document.getElementById('starsAmount').value = '100'">
+                        <div class="preset-icon">⭐</div>
+                        <div class="preset-amount">100 Stars</div>
+                    </div>
+                    <div class="preset-item" onclick="document.getElementById('starsAmount').value = '250'">
+                        <div class="preset-icon">⭐</div>
+                        <div class="preset-amount">250 Stars</div>
+                    </div>
+                    <div class="preset-item" onclick="document.getElementById('starsAmount').value = '500'">
+                        <div class="preset-icon">⭐</div>
+                        <div class="preset-amount">500 Stars</div>
+                    </div>
+                </div>
             </div>
             
             <div class="bet-section">
@@ -1018,28 +970,25 @@
         </div>
     </div>
 
-    <!-- Терминал для админа -->
-    <div class="admin-terminal" id="adminTerminal">
-        <div class="terminal-close" onclick="closeAdminTerminal()">✕</div>
-        <div class="terminal-content">
-            <div class="terminal-title">ADMIN TERMINAL</div>
-            <input type="text" class="terminal-input" id="adminUserId" placeholder="User ID">
-            <select class="terminal-select" id="adminCurrency">
-                <option value="ton">TON</option>
-                <option value="stars">Stars</option>
-            </select>
-            <input type="number" class="terminal-input" id="adminAmount" placeholder="Amount">
-            <button class="terminal-button" onclick="adminAddBalance()">Add Balance</button>
-            <button class="terminal-button" onclick="adminResetStats()">Reset User Stats</button>
-            <button class="terminal-button" onclick="adminSetCrashPoint(1.0)">Force Crash 1.0x</button>
+    <!-- Модальное окно с чеком -->
+    <div class="check-modal" id="checkModal">
+        <div class="check-content">
+            <div class="check-close" onclick="closeCheck()">✕</div>
+            <div class="check-icon" id="checkIcon">💎</div>
+            <div class="check-title" id="checkTitle">Счет на оплату</div>
+            <div class="check-details">К оплате:</div>
+            <div class="check-amount" id="checkAmount">0 TON</div>
+            <div class="check-qr" id="checkQR">📱</div>
+            <div class="check-address" id="checkAddress">EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N</div>
+            <div class="check-buttons">
+                <button class="check-btn" onclick="closeCheck()">Отмена</button>
+                <button class="check-btn pay" id="checkPayBtn" onclick="payCheck()">Оплатить</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // Конфигурация
-        const ADMIN_IDS = [5212904541]; // ID админов - ЗДЕСЬ НУЖНО ВСТАВИТЬ РЕАЛЬНЫЕ ID
-        
-        // Состояние игры - ОДИНАКОВОЕ ДЛЯ ВСЕХ
+        // Состояние игры
         let gameState = {
             isPlaying: false,
             multiplier: 1.0,
@@ -1048,11 +997,8 @@
             startTime: Date.now()
         };
         
-        // Активные ставки игроков
+        // Активные ставки
         let activeBets = [];
-        
-        // История игр
-        let gameHistory = [];
         
         // Пользователь
         let currentUser = {
@@ -1066,6 +1012,14 @@
             games: 0,
             wins: 0,
             totalMultiplier: 0
+        };
+        
+        // Текущий чек
+        let currentCheck = {
+            currency: 'ton',
+            amount: 0,
+            address: '',
+            transactionId: null
         };
         
         // Canvas
@@ -1101,34 +1055,16 @@
                         currentUser.firstName + (currentUser.lastName ? ' ' + currentUser.lastName : '');
                     document.getElementById('profileId').innerText = `ID: ${currentUser.id}`;
                     
-                    // Загружаем аватарку если есть
                     if (user.photo_url) {
                         const avatarDiv = document.getElementById('profileAvatar');
                         avatarDiv.innerHTML = `<img src="${user.photo_url}" alt="avatar">`;
                     }
                     
-                    // Проверяем админ ли пользователь
-                    if (ADMIN_IDS.includes(currentUser.id)) {
-                        // Добавляем скрытую кнопку для открытия терминала
-                        const terminalTrigger = document.createElement('div');
-                        terminalTrigger.style.position = 'fixed';
-                        terminalTrigger.style.bottom = '10px';
-                        terminalTrigger.style.right = '10px';
-                        terminalTrigger.style.width = '40px';
-                        terminalTrigger.style.height = '40px';
-                        terminalTrigger.style.background = '#8a2be2';
-                        terminalTrigger.style.borderRadius = '20px';
-                        terminalTrigger.style.cursor = 'pointer';
-                        terminalTrigger.style.zIndex = '1000';
-                        terminalTrigger.onclick = openAdminTerminal;
-                        document.body.appendChild(terminalTrigger);
-                    }
-                    
-                    // Загружаем баланс пользователя
+                    // Загружаем баланс
                     loadUserBalance();
                 }
             } else {
-                // Демо режим для тестирования
+                // Демо режим
                 currentUser.id = 12345;
                 currentUser.firstName = 'Тестовый';
                 document.getElementById('profileName').innerText = 'Тестовый Пользователь';
@@ -1136,9 +1072,9 @@
             }
         }
         
-        // Загрузка баланса пользователя (здесь должен быть запрос к бэкенду)
+        // Загрузка баланса
         function loadUserBalance() {
-            // Эмуляция загрузки
+            // Здесь будет запрос к бэкенду
             setTimeout(() => {
                 updateUI();
             }, 500);
@@ -1154,131 +1090,163 @@
                 currentUser.games > 0 ? (currentUser.totalMultiplier / currentUser.games).toFixed(2) + 'x' : '0x';
         }
         
-        // Функции для админа
-        function openAdminTerminal() {
-            if (ADMIN_IDS.includes(currentUser.id)) {
-                document.getElementById('adminTerminal').classList.add('active');
-            }
-        }
-        
-        function closeAdminTerminal() {
-            document.getElementById('adminTerminal').classList.remove('active');
-        }
-        
-        function adminAddBalance() {
-            const userId = document.getElementById('adminUserId').value;
-            const currency = document.getElementById('adminCurrency').value;
-            const amount = parseFloat(document.getElementById('adminAmount').value);
-            
-            if (!userId || isNaN(amount) || amount <= 0) {
-                alert('Заполните все поля');
-                return;
-            }
-            
-            // Здесь должен быть запрос к бэкенду для пополнения баланса
-            if (userId === currentUser.id.toString()) {
-                if (currency === 'ton') {
-                    currentUser.ton += amount;
-                } else {
-                    currentUser.stars += amount;
+        // Создание чека для TON из поля ввода
+        function createTonCheckFromInput() {
+            const amount = parseFloat(document.getElementById('tonAmount').value);
+            if (isNaN(amount) || amount <= 0) {
+                if (window.Telegram?.WebApp) {
+                    window.Telegram.WebApp.showPopup({
+                        title: 'Ошибка',
+                        message: 'Введите корректную сумму',
+                        buttons: [{id: 'ok', type: 'ok', text: 'OK'}]
+                    });
                 }
-                updateUI();
-                alert(`Пользователю ${userId} начислено ${amount} ${currency}`);
-            } else {
-                alert(`Запрос на пополнение пользователя ${userId} отправлен (эмуляция)`);
-            }
-        }
-        
-        function adminResetStats() {
-            const userId = document.getElementById('adminUserId').value;
-            
-            if (!userId) {
-                alert('Введите ID пользователя');
                 return;
             }
-            
-            if (userId === currentUser.id.toString()) {
-                currentUser.games = 0;
-                currentUser.wins = 0;
-                currentUser.totalMultiplier = 0;
-                updateUI();
-                alert('Статистика сброшена');
-            }
+            createTonCheck(amount);
         }
         
-        function adminSetCrashPoint(point) {
-            if (gameState.isPlaying) {
-                gameState.crashPoint = point;
-                alert(`Точка краша установлена на ${point}x`);
-            }
+        // Создание чека для TON
+        function createTonCheck(amount) {
+            currentCheck.currency = 'ton';
+            currentCheck.amount = amount;
+            
+            // Генерируем уникальный адрес для оплаты
+            const baseAddress = 'EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N';
+            currentCheck.address = baseAddress;
+            currentCheck.transactionId = 'TON_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
+            // Показываем чек
+            document.getElementById('checkIcon').innerHTML = '💎';
+            document.getElementById('checkTitle').innerHTML = 'Счет на оплату TON';
+            document.getElementById('checkAmount').innerHTML = amount + ' TON';
+            document.getElementById('checkAddress').innerHTML = currentCheck.address;
+            document.getElementById('checkQR').innerHTML = '💎';
+            document.getElementById('checkPayBtn').setAttribute('onclick', 'payTonCheck()');
+            
+            document.getElementById('checkModal').classList.add('active');
+            
+            console.log('Создан чек TON:', currentCheck);
         }
         
-        // TON Connect функции
-        function connectWallet(wallet) {
-            let walletInfo = {
-                telegram: { name: 'Wallet in Telegram', link: 'https://t.me/wallet' },
-                tonkeeper: { name: 'Tonkeeper', link: 'https://tonkeeper.com/' },
-                mytonwallet: { name: 'MyTonWallet', link: 'https://mytonwallet.app/' },
-                all: { name: 'All wallets', link: 'https://ton.org/wallets' }
-            };
-            
-            if (wallet === 'all') {
-                showAllWallets();
+        // Создание чека для Stars из поля ввода
+        function createStarsCheckFromInput() {
+            const amount = parseFloat(document.getElementById('starsAmount').value);
+            if (isNaN(amount) || amount <= 0) {
+                if (window.Telegram?.WebApp) {
+                    window.Telegram.WebApp.showPopup({
+                        title: 'Ошибка',
+                        message: 'Введите корректную сумму',
+                        buttons: [{id: 'ok', type: 'ok', text: 'OK'}]
+                    });
+                }
                 return;
             }
+            createStarsCheck(amount);
+        }
+        
+        // Создание чека для Stars
+        function createStarsCheck(amount) {
+            currentCheck.currency = 'stars';
+            currentCheck.amount = amount;
             
+            // Показываем чек
+            document.getElementById('checkIcon').innerHTML = '⭐';
+            document.getElementById('checkTitle').innerHTML = 'Оплата Stars';
+            document.getElementById('checkAmount').innerHTML = amount + ' Stars';
+            document.getElementById('checkAddress').innerHTML = 'Оплата через Telegram Stars';
+            document.getElementById('checkQR').innerHTML = '⭐';
+            document.getElementById('checkPayBtn').setAttribute('onclick', 'payStarsCheck()');
+            
+            document.getElementById('checkModal').classList.add('active');
+        }
+        
+        // Оплата TON чека
+        function payTonCheck() {
             if (window.Telegram?.WebApp) {
-                window.Telegram.WebApp.openLink(walletInfo[wallet].link);
-            } else {
-                window.open(walletInfo[wallet].link, '_blank');
+                const tg = window.Telegram.WebApp;
+                
+                // Открываем кошелек для оплаты
+                tg.openLink('ton://transfer/' + currentCheck.address + '?amount=' + (currentCheck.amount * 1000000000));
+                
+                // Ждем подтверждения
+                setTimeout(() => {
+                    checkTonPayment();
+                }, 30000);
             }
         }
         
-        function tonConnect() {
+        // Проверка оплаты TON
+        function checkTonPayment() {
             if (window.Telegram?.WebApp) {
-                window.Telegram.WebApp.showPopup({
-                    title: 'TON Connect',
-                    message: 'Connect your TON wallet?',
+                const tg = window.Telegram.WebApp;
+                
+                tg.showPopup({
+                    title: 'Проверка оплаты',
+                    message: 'Вы уже оплатили счет?',
                     buttons: [
-                        {id: 'connect', type: 'default', text: 'Connect'},
-                        {id: 'cancel', type: 'cancel', text: 'Cancel'}
+                        {id: 'yes', type: 'default', text: 'Да, оплатил'},
+                        {id: 'no', type: 'cancel', text: 'Нет'}
                     ]
                 }, (buttonId) => {
-                    if (buttonId === 'connect') {
-                        alert('TON Connect integration ready');
+                    if (buttonId === 'yes') {
+                        // Добавляем баланс
+                        currentUser.ton += currentCheck.amount;
+                        updateUI();
+                        closeCheck();
+                        
+                        tg.showPopup({
+                            title: 'Успешно',
+                            message: `Баланс пополнен на ${currentCheck.amount} TON`,
+                            buttons: [{id: 'ok', type: 'ok', text: 'OK'}]
+                        });
+                        
+                        console.log('Транзакция TON подтверждена:', currentCheck);
                     }
                 });
             }
         }
         
-        function showAllWallets() {
+        // Оплата Stars чека
+        function payStarsCheck() {
             if (window.Telegram?.WebApp) {
-                window.Telegram.WebApp.openLink('https://ton.org/wallets');
-            }
-        }
-        
-        // Покупка Stars
-        function buyStars(amount) {
-            if (window.Telegram?.WebApp) {
-                window.Telegram.WebApp.showPopup({
+                const tg = window.Telegram.WebApp;
+                
+                tg.showPopup({
                     title: 'Покупка Stars',
-                    message: `Купить ${amount} Stars за ${amount} Telegram Stars?`,
+                    message: `Купить ${currentCheck.amount} Stars за ${currentCheck.amount} Telegram Stars?`,
                     buttons: [
                         {id: 'buy', type: 'default', text: 'Купить'},
                         {id: 'cancel', type: 'cancel', text: 'Отмена'}
                     ]
                 }, (buttonId) => {
                     if (buttonId === 'buy') {
-                        // Здесь интеграция с Telegram Stars
-                        currentUser.stars += amount;
+                        // Добавляем баланс
+                        currentUser.stars += currentCheck.amount;
                         updateUI();
-                        window.Telegram.WebApp.showPopup({
+                        closeCheck();
+                        
+                        tg.showPopup({
                             title: 'Успешно',
-                            message: `Вы купили ${amount} Stars!`,
+                            message: `Вы купили ${currentCheck.amount} Stars!`,
                             buttons: [{id: 'ok', type: 'ok', text: 'OK'}]
                         });
                     }
                 });
+            }
+        }
+        
+        // Закрыть чек
+        function closeCheck() {
+            document.getElementById('checkModal').classList.remove('active');
+        }
+        
+        // Универсальная функция оплаты
+        function payCheck() {
+            if (currentCheck.currency === 'ton') {
+                payTonCheck();
+            } else {
+                payStarsCheck();
             }
         }
         
@@ -1311,7 +1279,6 @@
         }
         
         function openCaseReward() {
-            // Эмуляция открытия кейса
             if (window.Telegram?.WebApp) {
                 window.Telegram.WebApp.showPopup({
                     title: 'Кейс открыт!',
@@ -1337,10 +1304,10 @@
             }
         }
         
-        // Секретная функция: если ставка >= 50 TON, ракета падает на 1x
+        // Секретная функция
         function getRandomCrashPoint(betAmount, currency) {
             if (currency === 'ton' && betAmount >= 50) {
-                return 1.0; // Секретная функция - мгновенный краш
+                return 1.0;
             }
             
             const r = Math.random();
@@ -1350,7 +1317,6 @@
             return 11.7 + Math.random() * 20;
         }
         
-        // Добавление ставки в список
         function addActiveBet(userId, userName, amount, currency) {
             activeBets.push({
                 userId,
@@ -1364,7 +1330,6 @@
             updateBetsList();
         }
         
-        // Обновление списка ставок
         function updateBetsList() {
             const betsDiv = document.getElementById('activeBets');
             betsDiv.innerHTML = '';
@@ -1381,13 +1346,11 @@
             });
         }
         
-        // Очистка ставок после краша
         function clearBets() {
             activeBets = [];
             updateBetsList();
         }
         
-        // Функция ставки
         function placeBet() {
             if (gameState.isPlaying) return;
             
@@ -1405,12 +1368,10 @@
                 return;
             }
             
-            // Списываем ставку
             currentUser[currentCurr] -= amt;
             currentUser.games++;
             updateUI();
             
-            // Добавляем в активные ставки
             addActiveBet(
                 currentUser.id,
                 currentUser.firstName,
@@ -1418,7 +1379,6 @@
                 currentCurr
             );
             
-            // Подготовка к игре
             gameState.isPlaying = true;
             gameState.hasCashedOut = false;
             gameState.multiplier = 1.0;
@@ -1438,7 +1398,6 @@
             gameLoop = setInterval(update, 50);
         }
         
-        // Функция забирания выигрыша
         function cashOut() {
             if (!gameState.isPlaying || gameState.hasCashedOut) return;
             
@@ -1452,7 +1411,6 @@
             
             gameState.hasCashedOut = true;
             
-            // Добавляем в историю
             const hist = document.getElementById('history');
             const item = document.createElement('div');
             item.className = 'hist-item';
@@ -1463,7 +1421,6 @@
             `;
             hist.prepend(item);
             
-            // Обновляем активные ставки
             activeBets = activeBets.filter(bet => bet.userId !== currentUser.id);
             updateBetsList();
             
@@ -1481,7 +1438,6 @@
             document.getElementById('bet-btn').style.opacity = '1';
             
             if (!isWin && !gameState.hasCashedOut) {
-                // Добавляем в историю краш
                 const hist = document.getElementById('history');
                 const item = document.createElement('div');
                 item.className = 'hist-item';
@@ -1492,7 +1448,6 @@
                 hist.prepend(item);
             }
             
-            // Очищаем активные ставки
             clearBets();
             
             setTimeout(() => {
@@ -1517,7 +1472,6 @@
             }, 2000);
         }
         
-        // Игровой цикл
         function update() {
             if (!gameState.isPlaying) return;
             
