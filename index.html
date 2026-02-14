@@ -13,9 +13,25 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
+            overflow: hidden;
+        }
+
+        /* Скрываем все разделы по умолчанию */
+        .page {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100vh;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Активный раздел */
+        .page.active {
+            display: flex;
         }
 
         .container {
@@ -40,6 +56,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            width: 100%;
         }
 
         .menu-btn:active {
@@ -48,54 +65,64 @@
             border-color: #0088cc;
         }
 
-        .icon {
-            font-size: 24px;
-            filter: drop-shadow(0 0 5px #0088cc);
-        }
+        .icon { font-size: 24px; filter: drop-shadow(0 0 5px #0088cc); }
+        .status { font-size: 12px; color: #888; margin-top: 5px; display: block; text-align: left; }
+        h1 { font-size: 22px; margin-bottom: 40px; letter-spacing: 1px; text-transform: uppercase; }
 
-        .status {
-            font-size: 12px;
-            color: #888;
-            margin-top: 5px;
-            display: block;
-        }
-
-        h1 {
-            font-size: 22px;
-            margin-bottom: 40px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
 
-    <h1>Центр Управления</h1>
+    <!-- ГЛАВНАЯ -->
+    <div id="main-page" class="page active">
+        <h1>Центр Управления</h1>
+        <div class="container">
+            <button class="menu-btn" onclick="showPage('inventory-page')">
+                <div>
+                    <span>Инвентарь</span>
+                    <span class="status">Трюм заполнен на 40%</span>
+                </div>
+                <span class="icon">📦</span>
+            </button>
 
-    <div class="container">
-        <button class="menu-btn" onclick="send('inventory')">
-            <div>
-                <span>Инвентарь</span>
-                <span class="status">Трюм заполнен на 40%</span>
-            </div>
-            <span class="icon">📦</span>
-        </button>
+            <button class="menu-btn" onclick="showPage('rocket-page')">
+                <div>
+                    <span>Ракета</span>
+                    <span class="status">К запуску готов</span>
+                </div>
+                <span class="icon">🚀</span>
+            </button>
 
-        <button class="menu-btn" onclick="send('rocket')">
-            <div>
-                <span>Ракета</span>
-                <span class="status">К запуску готов</span>
-            </div>
-            <span class="icon">🚀</span>
-        </button>
+            <button class="menu-btn" onclick="showPage('cases-page')">
+                <div>
+                    <span>Кейсы</span>
+                    <span class="status">Доступно: 3 шт.</span>
+                </div>
+                <span class="icon">🛸</span>
+            </button>
+        </div>
+    </div>
 
-        <button class="menu-btn" onclick="send('cases')">
-            <div>
-                <span>Кейсы</span>
-                <span class="status">Доступно: 3 шт.</span>
-            </div>
-            <span class="icon">🛸</span>
-        </button>
+    <!-- РАЗДЕЛ ИНВЕНТАРЬ -->
+    <div id="inventory-page" class="page">
+        <h1>📦 Инвентарь</h1>
+        <p>Ваши ресурсы отобразятся здесь</p>
+    </div>
+
+    <!-- РАЗДЕЛ РАКЕТА -->
+    <div id="rocket-page" class="page">
+        <h1>🚀 Ракета</h1>
+        <p>Подготовка к гиперпрыжку...</p>
+    </div>
+
+    <!-- РАЗДЕЛ КЕЙСЫ -->
+    <div id="cases-page" class="page">
+        <h1>🛸 Кейсы</h1>
+        <p>Откройте секретные контейнеры</p>
     </div>
 
     <script>
@@ -103,9 +130,25 @@
         tg.expand();
         tg.setHeaderColor('#1b2735');
 
-        function send(action) {
-            tg.sendData(action);
+        // Функция переключения страниц
+        function showPage(pageId) {
+            // Скрываем все страницы
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // Показываем нужную
+            document.getElementById(pageId).classList.add('active');
+
+            // Показываем кнопку "Назад" в Telegram
+            tg.BackButton.show();
         }
+
+        // Обработка кнопки "Назад" в Telegram
+        tg.BackButton.onClick(() => {
+            showPage('main-page');
+            tg.BackButton.hide();
+        });
     </script>
 </body>
 </html>
