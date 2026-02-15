@@ -491,6 +491,13 @@
             opacity: 0.6;
         }
 
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+            border: 2px solid #17a2b8;
+            box-shadow: 0 0 20px #17a2b8;
+        }
+
         .hidden {
             display: none !important;
         }
@@ -1638,7 +1645,20 @@
             border: 1px solid #ffd966;
             animation: pulse 2s infinite;
         }
+
+        /* Крипто кошелек */
+        .wallet-status {
+            color: #2ecc71;
+            font-size: 12px;
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(46, 204, 113, 0.1);
+            border-radius: 12px;
+            border: 1px solid #2ecc71;
+        }
     </style>
+    <!-- Подключаем TON Connect библиотеку -->
+    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
 </head>
 <body>
     <div class="game-container">
@@ -1672,6 +1692,20 @@
                 </div>
                 <div class="profile-name" id="profileName">Загрузка...</div>
                 <div class="profile-id" id="profileId">ID: ...</div>
+                <div class="wallet-status hidden" id="walletStatus"></div>
+            </div>
+
+            <!-- Подключение крипто кошелька -->
+            <div class="ton-connect-section">
+                <div class="ton-connect-title">
+                    <div class="ton-logo-title">💎</div>
+                    Крипто кошелек
+                </div>
+                
+                <button class="custom-amount-btn" id="connectWalletBtn" onclick="connectWallet()">🔌 Подключить кошелек</button>
+                <button class="custom-amount-btn hidden" id="disconnectWalletBtn" onclick="disconnectWallet()">🔌 Отключить кошелек</button>
+                
+                <div id="walletInfo" class="wallet-status hidden"></div>
             </div>
 
             <!-- Пополнение TON -->
@@ -1912,8 +1946,12 @@
     <script>
         // Конфигурация
         const TON_WALLET = 'UQBUTuGvSDgrb9yfIYOdD_-JVfHo_VC_u4nghpFWFe5aP7Bl';
-        const STARS_RECEIVER_ID = '5212904541';
         const ADMIN_IDS = [5212904541, 123456789];
+        
+        // TON Connect
+        let tonConnector = null;
+        let walletConnected = false;
+        let walletAddress = '';
         
         // Состояние игры
         let gameState = {
@@ -1981,6 +2019,10 @@
         let profileId = document.getElementById('profileId');
         let rouletteClose = document.getElementById('rouletteClose');
         let checkClose = document.getElementById('checkClose');
+        let connectWalletBtn = document.getElementById('connectWalletBtn');
+        let disconnectWalletBtn = document.getElementById('disconnectWalletBtn');
+        let walletInfo = document.getElementById('walletInfo');
+        let walletStatus = document.getElementById('walletStatus');
         
         // ЗЕЛЕНАЯ линия
         let trafficLine = {
@@ -2023,25 +2065,11 @@
         
         // Инициализация
         function init() {
-            // Проверяем наличие Telegram WebApp
-            if (window.Telegram?.WebApp) {
-                const tg = window.Telegram.WebApp;
-                tg.ready();
-                tg.expand();
-                
-                // Пытаемся получить данные пользователя
-                try {
-                    const user = tg.initDataUnsafe?.user;
-                    if (user) {
-                        currentUser.id = user.id;
-                        currentUser.firstName = user.first_name || 'Игрок';
-                        currentUser.lastName = user.last_name || '';
-                        currentUser.username = user.username || '';
-                    }
-                } catch (e) {
-                    console.log('Не удалось получить данные пользователя');
-                }
-            }
+            // Инициализируем TON Connect
+            initTonConnect();
+            
+            // Получаем данные пользователя Telegram
+            loadTelegramUser();
             
             initBackgroundLines();
             updateUI();
@@ -2052,51 +2080,136 @@
             setTimeout(() => {
                 resizeCanvas();
             }, 100);
-            
-            // Загружаем профиль
-            loadProfile();
         }
         
-        // Загрузка профиля
-        function loadProfile() {
-            console.log("Загружаем профиль...");
-            
+        // Инициализация TON Connect
+        function initTonConnect() {
+            try {
+                tonConnector = new TonConnectSDK.TonConnect({
+                    manifestUrl: 'https://your-domain.com/tonconnect-manifest.json'
+                });
+                
+                // Проверяем, был ли уже подключен кошелек
+                tonConnector.restoreConnection().then((connection) => {
+                    if (connection) {
+                        walletConnected = true;
+                        walletAddress = connection.account.address;
+                        updateWalletUI();
+                    }
+                }).catch(() => {});
+            } catch (e) {
+                console.log('TON Connect не доступен');
+            }
+        }
+        
+        // Подключение кошелька
+        async function connectWallet() {
+            try {
+                const walletConnection = await tonConnector.connect({
+                    universalLink: 'https://app.tonkeeper.com/ton-connect',
+                    bridgeUrl: 'https://bridge.tonapi.io/bridge'
+                });
+                
+                walletConnected = true;
+                walletAddress = walletConnection.account.address;
+                updateWalletUI();
+                
+                alert('✅ Кошелек успешно подключен');
+            } catch (e) {
+                alert('❌ Ошибка подключения кошелька');
+            }
+        }
+        
+        // Отключение кошелька
+        function disconnectWallet() {
+            if (tonConnector) {
+                tonConnector.disconnect();
+            }
+            walletConnected = false;
+            walletAddress = '';
+            updateWalletUI();
+        }
+        
+        // Обновление UI кошелька
+        function updateWalletUI() {
+            if (walletConnected) {
+                connectWalletBtn.classList.add('hidden');
+                disconnectWalletBtn.classList.remove('hidden');
+                walletInfo.classList.remove('hidden');
+                walletInfo.innerHTML = `✅ Кошелек: ${walletAddress.slice(0,6)}...${walletAddress.slice(-4)}`;
+                walletStatus.classList.remove('hidden');
+                walletStatus.innerHTML = `💎 Кошелек подключен`;
+            } else {
+                connectWalletBtn.classList.remove('hidden');
+                disconnectWalletBtn.classList.add('hidden');
+                walletInfo.classList.add('hidden');
+                walletStatus.classList.add('hidden');
+            }
+        }
+        
+        // Загрузка пользователя Telegram
+        function loadTelegramUser() {
             profileLoading.style.display = 'block';
             profileAvatar.innerHTML = '<div class="profile-loading">⏳ Загрузка...</div>';
             profileName.innerText = 'Загрузка...';
             profileId.innerText = 'ID: ...';
             
             setTimeout(() => {
-                if (currentUser.id) {
-                    profileName.innerText = currentUser.firstName + (currentUser.lastName ? ' ' + currentUser.lastName : '');
-                    profileId.innerText = `ID: ${currentUser.id}`;
-                    
-                    // Пробуем получить фото
-                    if (window.Telegram?.WebApp) {
+                if (window.Telegram?.WebApp) {
+                    try {
                         const tg = window.Telegram.WebApp;
+                        tg.ready();
+                        
                         const user = tg.initDataUnsafe?.user;
-                        if (user?.photo_url) {
-                            profileAvatar.innerHTML = `<img src="${user.photo_url}" alt="avatar" style="width:100%; height:100%; object-fit:cover;">`;
+                        if (user) {
+                            currentUser.id = user.id;
+                            currentUser.firstName = user.first_name || 'Игрок';
+                            currentUser.lastName = user.last_name || '';
+                            currentUser.username = user.username || '';
+                            
+                            profileName.innerText = currentUser.firstName + (currentUser.lastName ? ' ' + currentUser.lastName : '');
+                            profileId.innerText = `ID: ${currentUser.id}`;
+                            
+                            if (user.photo_url) {
+                                profileAvatar.innerHTML = `<img src="${user.photo_url}" alt="avatar" style="width:100%; height:100%; object-fit:cover;">`;
+                            } else {
+                                profileAvatar.innerHTML = '👤';
+                            }
+                            
+                            // Проверяем админа
+                            if (ADMIN_IDS.includes(currentUser.id)) {
+                                document.getElementById('adminPanel').style.display = 'block';
+                            }
                         } else {
+                            // Если нет данных пользователя, генерируем случайный ID
+                            currentUser.id = Math.floor(Math.random() * 1000000);
+                            currentUser.firstName = 'Игрок';
+                            
+                            profileName.innerText = 'Игрок';
+                            profileId.innerText = `ID: ${currentUser.id}`;
                             profileAvatar.innerHTML = '👤';
                         }
-                    } else {
+                    } catch (e) {
+                        // Генерируем случайный ID при ошибке
+                        currentUser.id = Math.floor(Math.random() * 1000000);
+                        currentUser.firstName = 'Игрок';
+                        
+                        profileName.innerText = 'Игрок';
+                        profileId.innerText = `ID: ${currentUser.id}`;
                         profileAvatar.innerHTML = '👤';
                     }
-                    
-                    // Проверяем админа
-                    if (ADMIN_IDS.includes(currentUser.id)) {
-                        document.getElementById('adminPanel').style.display = 'block';
-                    }
                 } else {
-                    // Если нет ID, показываем заглушку
-                    profileName.innerText = 'Гость';
-                    profileId.innerText = 'ID: не определен';
+                    // Генерируем случайный ID для веб-версии
+                    currentUser.id = Math.floor(Math.random() * 1000000);
+                    currentUser.firstName = 'Игрок';
+                    
+                    profileName.innerText = 'Игрок';
+                    profileId.innerText = `ID: ${currentUser.id}`;
                     profileAvatar.innerHTML = '👤';
                 }
                 
-                console.log("Профиль загружен");
-            }, 3000);
+                console.log("Профиль загружен, ID:", currentUser.id);
+            }, 2000);
         }
         
         function initBackgroundLines() {
@@ -2246,16 +2359,38 @@
                 return;
             }
             
-            currentInvoice.currency = 'ton';
-            currentInvoice.amount = amount;
-            
-            document.getElementById('checkIcon').innerHTML = '💎';
-            document.getElementById('checkTitle').innerHTML = 'Счет TON';
-            document.getElementById('checkAmount').innerHTML = amount + ' TON';
-            document.getElementById('checkAddress').innerHTML = 'Кошелек: ' + TON_WALLET;
-            document.getElementById('checkPayBtn').setAttribute('onclick', 'payTonInvoice()');
-            
-            document.getElementById('checkModal').classList.add('active');
+            if (walletConnected && tonConnector) {
+                // Отправляем транзакцию через подключенный кошелек
+                const transaction = {
+                    validUntil: Math.floor(Date.now() / 1000) + 3600,
+                    messages: [
+                        {
+                            address: TON_WALLET,
+                            amount: (amount * 1000000000).toString()
+                        }
+                    ]
+                };
+                
+                tonConnector.sendTransaction(transaction).then(() => {
+                    currentUser.ton += amount;
+                    updateUI();
+                    alert(`✅ Баланс пополнен на ${amount} TON через кошелек`);
+                }).catch((e) => {
+                    alert('❌ Ошибка транзакции');
+                });
+            } else {
+                // Показываем чек с адресом кошелька
+                currentInvoice.currency = 'ton';
+                currentInvoice.amount = amount;
+                
+                document.getElementById('checkIcon').innerHTML = '💎';
+                document.getElementById('checkTitle').innerHTML = 'Счет TON';
+                document.getElementById('checkAmount').innerHTML = amount + ' TON';
+                document.getElementById('checkAddress').innerHTML = 'Кошелек: ' + TON_WALLET;
+                document.getElementById('checkPayBtn').setAttribute('onclick', 'payTonInvoice()');
+                
+                document.getElementById('checkModal').classList.add('active');
+            }
         }
         
         function createStarsInvoice() {
@@ -2265,16 +2400,33 @@
                 return;
             }
             
-            currentInvoice.currency = 'stars';
-            currentInvoice.amount = amount;
-            
-            document.getElementById('checkIcon').innerHTML = '⭐';
-            document.getElementById('checkTitle').innerHTML = 'Счет Stars';
-            document.getElementById('checkAmount').innerHTML = amount + ' Stars';
-            document.getElementById('checkAddress').innerHTML = 'Оплата через Telegram Stars';
-            document.getElementById('checkPayBtn').setAttribute('onclick', 'payStarsInvoice()');
-            
-            document.getElementById('checkModal').classList.add('active');
+            if (window.Telegram?.WebApp) {
+                const tg = window.Telegram.WebApp;
+                
+                // Создаем инвойс для Stars (реальное списание с баланса Telegram)
+                const invoiceData = {
+                    title: 'Пополнение Stars',
+                    description: `Покупка ${amount} Stars`,
+                    payload: JSON.stringify({
+                        user_id: currentUser.id,
+                        amount: amount
+                    }),
+                    currency: 'XTR',
+                    prices: [{ label: 'Stars', amount: amount }]
+                };
+                
+                tg.openInvoice(invoiceData, (status) => {
+                    if (status === 'paid') {
+                        currentUser.stars += amount;
+                        updateUI();
+                        alert(`✅ Куплено ${amount} Stars`);
+                    } else {
+                        alert('❌ Платёж отменён');
+                    }
+                });
+            } else {
+                alert('Покупка Stars доступна только в Telegram');
+            }
         }
         
         function payTonInvoice() {
@@ -2290,53 +2442,12 @@
                         alert(`✅ Баланс пополнен на ${currentInvoice.amount} TON`);
                     }
                 }, 5000);
-            } else {
-                alert('Оплата TON доступна только в Telegram');
-                closeCheck();
-            }
-        }
-        
-        function payStarsInvoice() {
-            if (window.Telegram?.WebApp) {
-                const tg = window.Telegram.WebApp;
-                
-                if (tg.openInvoice) {
-                    const invoiceData = {
-                        title: 'Пополнение Stars',
-                        description: `Покупка ${currentInvoice.amount} Stars`,
-                        payload: JSON.stringify({
-                            user_id: currentUser.id,
-                            amount: currentInvoice.amount
-                        }),
-                        currency: 'XTR',
-                        prices: [{ label: 'Stars', amount: currentInvoice.amount }]
-                    };
-                    
-                    tg.openInvoice(invoiceData, (status) => {
-                        if (status === 'paid') {
-                            currentUser.stars += currentInvoice.amount;
-                            updateUI();
-                            alert(`✅ Куплено ${currentInvoice.amount} Stars`);
-                        } else {
-                            alert('❌ Платёж отменён');
-                        }
-                        closeCheck();
-                    });
-                } else {
-                    alert('Telegram Stars не поддерживаются в этой версии');
-                    closeCheck();
-                }
-            } else {
-                alert('Оплата Stars доступна только в Telegram');
-                closeCheck();
             }
         }
         
         function processPayment() {
             if (currentInvoice.currency === 'ton') {
                 payTonInvoice();
-            } else {
-                payStarsInvoice();
             }
         }
         
@@ -2912,6 +3023,10 @@
             });
         });
         
+        // Делаем функции глобальными
+        window.connectWallet = connectWallet;
+        window.disconnectWallet = disconnectWallet;
+        
         init();
 
         function openRoulette(type) {
@@ -3065,7 +3180,6 @@
             document.getElementById('roulettePayBtn').disabled = true;
             document.getElementById('roulettePayBtn').innerText = 'Крутится...';
             
-            // Блокируем кнопку закрытия
             isRouletteSpinning = true;
             rouletteClose.classList.add('disabled');
             
@@ -3099,7 +3213,6 @@
                     document.getElementById('roulettePayBtn').disabled = false;
                     document.getElementById('roulettePayBtn').innerText = 'Крутить';
                     
-                    // Разблокируем кнопку закрытия
                     isRouletteSpinning = false;
                     rouletteClose.classList.remove('disabled');
                     return;
