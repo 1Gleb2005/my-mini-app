@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CONTROL CENTER</title>
     <!-- TON Connect библиотеки -->
-    <script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@2.0.0/dist/tonconnect-ui.umd.min.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@2.0.9/dist/tonconnect-ui.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -575,12 +575,6 @@
             color: #8a2be2;
             font-size: 12px;
             margin-bottom: 16px;
-        }
-
-        .profile-loading {
-            color: #ffd966;
-            font-size: 14px;
-            animation: pulse 1.5s infinite;
         }
 
         /* TON Connect стили */
@@ -1663,6 +1657,10 @@
             border-color: #ff4757;
             background: rgba(255, 71, 87, 0.1);
         }
+
+        .quick-load {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -1692,9 +1690,7 @@
         <!-- Секция Профиль -->
         <div id="profile-section" class="section active">
             <div class="profile-header">
-                <div class="profile-avatar" id="profileAvatar">
-                    <div class="profile-loading" id="profileLoading">⏳ Загрузка...</div>
-                </div>
+                <div class="profile-avatar" id="profileAvatar">👤</div>
                 <div class="profile-name" id="profileName">Загрузка...</div>
                 <div class="profile-id" id="profileId">ID: ...</div>
             </div>
@@ -1929,9 +1925,9 @@
     </div>
 
     <script>
-        // Конфигурация
+        // Конфигурация - исправленный манифест и админы
         const TON_WALLET = 'UQBUTuGvSDgrb9yfIYOdD_-JVfHo_VC_u4nghpFWFe5aP7Bl';
-        const ADMIN_IDS = [5212904541, 123456789];
+        const ADMIN_IDS = [74873, 5212904541]; // Добавили ID 74873
         
         // TON Connect
         let tonConnectUI = null;
@@ -1957,7 +1953,7 @@
         let backgroundLines = [];
         const BACKGROUND_LINE_COUNT = 30;
         
-        // Пользователь
+        // Пользователь - загружаем из localStorage сразу
         let currentUser = {
             id: null,
             firstName: 'Игрок',
@@ -1992,7 +1988,6 @@
         let winModal = document.getElementById('winModal');
         let winEquation = document.getElementById('winEquation');
         let winTotal = document.getElementById('winTotal');
-        let profileLoading = document.getElementById('profileLoading');
         let profileAvatar = document.getElementById('profileAvatar');
         let profileName = document.getElementById('profileName');
         let profileId = document.getElementById('profileId');
@@ -2038,15 +2033,15 @@
         // Флаг для рулетки
         let isRouletteSpinning = false;
         
+        // Загружаем данные сразу
+        loadUserData();
+        
         // Инициализация
         function init() {
-            // Загружаем сохраненные данные
-            loadUserData();
-            
-            // Инициализируем TON Connect
+            // Инициализируем TON Connect с правильным манифестом
             initTonConnect();
             
-            // Получаем данные пользователя Telegram
+            // Получаем данные пользователя Telegram (без задержки)
             loadTelegramUser();
             
             initBackgroundLines();
@@ -2076,6 +2071,10 @@
                     currentUser.wins = userData.wins || 0;
                     currentUser.inventory = userData.inventory || [];
                     currentUser.trafficCollected = userData.trafficCollected || 0;
+                    
+                    // Сразу показываем сохраненные данные
+                    profileName.innerText = currentUser.firstName;
+                    profileId.innerText = `ID: ${currentUser.id || 'не определен'}`;
                 } catch (e) {
                     console.log('Ошибка загрузки данных');
                 }
@@ -2099,12 +2098,12 @@
             localStorage.setItem('controlCenterUser', JSON.stringify(userData));
         }
         
-        // Инициализация TON Connect
+        // Инициализация TON Connect с правильным манифестом
         function initTonConnect() {
             try {
-                // Создаем UI для TON Connect
+                // Используем публичный манифест для тестирования
                 tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-                    manifestUrl: 'https://gist.githubusercontent.com/yourusername/yourgistid/raw/tonconnect-manifest.json',
+                    manifestUrl: 'https://raw.githubusercontent.com/ton-connect/demo-dapp/main/public/tonconnect-manifest.json',
                     buttonRootId: 'ton-connect-button'
                 });
                 
@@ -2127,7 +2126,7 @@
                 console.log('TON Connect ошибка:', e);
                 walletInfo.classList.remove('hidden');
                 walletInfo.classList.add('error');
-                walletInfo.innerHTML = '❌ Ошибка подключения TON Connect';
+                walletInfo.innerHTML = '⚠️ TON Connect не доступен';
             }
         }
         
@@ -2145,7 +2144,6 @@
             }
             
             try {
-                // Отправляем транзакцию через подключенный кошелек
                 const transaction = {
                     validUntil: Math.floor(Date.now() / 1000) + 600,
                     messages: [
@@ -2168,7 +2166,7 @@
             }
         }
         
-        // Покупка Stars
+        // Покупка Stars - ПРАВИЛЬНАЯ РЕАЛИЗАЦИЯ
         function buyStars() {
             const amount = parseFloat(document.getElementById('starsAmount').value);
             if (isNaN(amount) || amount <= 0) {
@@ -2187,21 +2185,24 @@
                         user_id: currentUser.id,
                         amount: amount
                     }),
-                    currency: 'XTR',
+                    currency: 'XTR', // Обязательно XTR для Звёзд
                     prices: [{ 
                         label: 'Stars', 
-                        amount: amount
+                        amount: amount // Цена в звёздах
                     }]
                 };
                 
                 // Открываем инвойс для оплаты
                 tg.openInvoice(invoiceData, (status) => {
                     if (status === 'paid') {
+                        // Успешная оплата - добавляем звёзды
                         currentUser.stars += amount;
                         updateUI();
                         alert(`✅ Куплено ${amount} Stars`);
-                    } else {
+                    } else if (status === 'cancelled') {
                         alert('❌ Платёж отменён');
+                    } else if (status === 'failed') {
+                        alert('❌ Ошибка платежа');
                     }
                 });
             } else {
@@ -2209,55 +2210,53 @@
             }
         }
         
-        // Загрузка пользователя Telegram
+        // Загрузка пользователя Telegram (БЕЗ ЗАДЕРЖКИ)
         function loadTelegramUser() {
-            profileLoading.style.display = 'block';
-            profileAvatar.innerHTML = '<div class="profile-loading">⏳ Загрузка...</div>';
-            
-            setTimeout(() => {
-                if (window.Telegram?.WebApp) {
-                    try {
-                        const tg = window.Telegram.WebApp;
-                        tg.ready();
+            if (window.Telegram?.WebApp) {
+                try {
+                    const tg = window.Telegram.WebApp;
+                    tg.ready();
+                    
+                    const user = tg.initDataUnsafe?.user;
+                    if (user) {
+                        currentUser.id = user.id;
+                        currentUser.firstName = user.first_name || 'Игрок';
+                        currentUser.lastName = user.last_name || '';
+                        currentUser.username = user.username || '';
                         
-                        const user = tg.initDataUnsafe?.user;
-                        if (user) {
-                            currentUser.id = user.id;
-                            currentUser.firstName = user.first_name || 'Игрок';
-                            currentUser.lastName = user.last_name || '';
-                            currentUser.username = user.username || '';
-                            
-                            profileName.innerText = currentUser.firstName + (currentUser.lastName ? ' ' + currentUser.lastName : '');
-                            profileId.innerText = `ID: ${currentUser.id}`;
-                            
-                            if (user.photo_url) {
-                                profileAvatar.innerHTML = `<img src="${user.photo_url}" alt="avatar" style="width:100%; height:100%; object-fit:cover;">`;
-                            } else {
-                                profileAvatar.innerHTML = '👤';
-                            }
-                            
-                            // Проверяем админа
-                            if (ADMIN_IDS.includes(currentUser.id)) {
-                                document.getElementById('adminPanel').style.display = 'block';
-                            }
+                        profileName.innerText = currentUser.firstName + (currentUser.lastName ? ' ' + currentUser.lastName : '');
+                        profileId.innerText = `ID: ${currentUser.id}`;
+                        
+                        if (user.photo_url) {
+                            profileAvatar.innerHTML = `<img src="${user.photo_url}" alt="avatar" style="width:100%; height:100%; object-fit:cover;">`;
                         }
-                    } catch (e) {
-                        console.log('Ошибка загрузки Telegram данных');
+                        
+                        // Проверяем админа
+                        if (ADMIN_IDS.includes(currentUser.id)) {
+                            document.getElementById('adminPanel').style.display = 'block';
+                        }
                     }
+                } catch (e) {
+                    console.log('Ошибка загрузки Telegram данных');
                 }
-                
-                // Если нет ID, генерируем случайный
-                if (!currentUser.id) {
+            }
+            
+            // Если нет ID, используем сохраненный или генерируем новый
+            if (!currentUser.id) {
+                const savedId = localStorage.getItem('controlCenterUserId');
+                if (savedId) {
+                    currentUser.id = parseInt(savedId);
+                } else {
                     currentUser.id = Math.floor(Math.random() * 1000000);
-                    profileName.innerText = currentUser.firstName;
-                    profileId.innerText = `ID: ${currentUser.id}`;
-                    profileAvatar.innerHTML = '👤';
+                    localStorage.setItem('controlCenterUserId', currentUser.id);
                 }
-                
-                // Сохраняем данные
-                saveUserData();
-                console.log("Профиль загружен, ID:", currentUser.id);
-            }, 2000);
+                profileName.innerText = currentUser.firstName;
+                profileId.innerText = `ID: ${currentUser.id}`;
+            }
+            
+            // Сохраняем данные
+            saveUserData();
+            console.log("Профиль загружен, ID:", currentUser.id);
         }
         
         function initBackgroundLines() {
