@@ -1638,71 +1638,9 @@
             border: 1px solid #ffd966;
             animation: pulse 2s infinite;
         }
-
-        .telegram-warning {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.95);
-            backdrop-filter: blur(10px);
-            z-index: 10000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .telegram-warning.active {
-            display: flex;
-        }
-
-        .telegram-warning-content {
-            background: rgba(0,0,0,0.9);
-            backdrop-filter: blur(20px);
-            border: 2px solid #8a2be2;
-            border-radius: 30px;
-            padding: 30px;
-            max-width: 300px;
-            width: 90%;
-            text-align: center;
-            position: relative;
-            box-shadow: 0 0 50px #8a2be2;
-            animation: popIn 0.5s ease;
-        }
-
-        .telegram-warning-icon {
-            font-size: 60px;
-            margin-bottom: 20px;
-            color: #8a2be2;
-            animation: bounce 2s infinite;
-        }
-
-        .telegram-warning-title {
-            color: #8a2be2;
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 10px;
-            text-shadow: 0 0 10px #8a2be2;
-        }
-
-        .telegram-warning-text {
-            color: white;
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
     </style>
 </head>
 <body>
-    <!-- Предупреждение о Telegram -->
-    <div class="telegram-warning" id="telegramWarning">
-        <div class="telegram-warning-content">
-            <div class="telegram-warning-icon">📱</div>
-            <div class="telegram-warning-title">ОШИБКА</div>
-            <div class="telegram-warning-text">Приложение работает только в Telegram</div>
-        </div>
-    </div>
-
     <div class="game-container">
         <div class="control-center-header">CONTROL CENTER</div>
 
@@ -1977,12 +1915,6 @@
         const STARS_RECEIVER_ID = '5212904541';
         const ADMIN_IDS = [5212904541, 123456789];
         
-        // Проверка на запуск в Telegram
-        if (!window.Telegram?.WebApp) {
-            document.getElementById('telegramWarning').classList.add('active');
-            throw new Error('Application must be launched in Telegram');
-        }
-        
         // Состояние игры
         let gameState = {
             isPlaying: true,
@@ -2091,6 +2023,26 @@
         
         // Инициализация
         function init() {
+            // Проверяем наличие Telegram WebApp
+            if (window.Telegram?.WebApp) {
+                const tg = window.Telegram.WebApp;
+                tg.ready();
+                tg.expand();
+                
+                // Пытаемся получить данные пользователя
+                try {
+                    const user = tg.initDataUnsafe?.user;
+                    if (user) {
+                        currentUser.id = user.id;
+                        currentUser.firstName = user.first_name || 'Игрок';
+                        currentUser.lastName = user.last_name || '';
+                        currentUser.username = user.username || '';
+                    }
+                } catch (e) {
+                    console.log('Не удалось получить данные пользователя');
+                }
+            }
+            
             initBackgroundLines();
             updateUI();
             updateInventory();
@@ -2101,12 +2053,13 @@
                 resizeCanvas();
             }, 100);
             
-            loadTelegramProfile();
+            // Загружаем профиль
+            loadProfile();
         }
         
-        // Долгая загрузка профиля
-        function loadTelegramProfile() {
-            console.log("Начинаем загрузку профиля...");
+        // Загрузка профиля
+        function loadProfile() {
+            console.log("Загружаем профиль...");
             
             profileLoading.style.display = 'block';
             profileAvatar.innerHTML = '<div class="profile-loading">⏳ Загрузка...</div>';
@@ -2114,27 +2067,32 @@
             profileId.innerText = 'ID: ...';
             
             setTimeout(() => {
-                const tg = window.Telegram.WebApp;
-                const user = tg.initDataUnsafe?.user;
-                
-                if (user) {
-                    currentUser.id = user.id;
-                    currentUser.firstName = user.first_name || 'Игрок';
-                    currentUser.lastName = user.last_name || '';
-                    currentUser.username = user.username || '';
-                    
+                if (currentUser.id) {
                     profileName.innerText = currentUser.firstName + (currentUser.lastName ? ' ' + currentUser.lastName : '');
                     profileId.innerText = `ID: ${currentUser.id}`;
                     
-                    if (user.photo_url) {
-                        profileAvatar.innerHTML = `<img src="${user.photo_url}" alt="avatar" style="width:100%; height:100%; object-fit:cover;">`;
+                    // Пробуем получить фото
+                    if (window.Telegram?.WebApp) {
+                        const tg = window.Telegram.WebApp;
+                        const user = tg.initDataUnsafe?.user;
+                        if (user?.photo_url) {
+                            profileAvatar.innerHTML = `<img src="${user.photo_url}" alt="avatar" style="width:100%; height:100%; object-fit:cover;">`;
+                        } else {
+                            profileAvatar.innerHTML = '👤';
+                        }
                     } else {
                         profileAvatar.innerHTML = '👤';
                     }
                     
+                    // Проверяем админа
                     if (ADMIN_IDS.includes(currentUser.id)) {
                         document.getElementById('adminPanel').style.display = 'block';
                     }
+                } else {
+                    // Если нет ID, показываем заглушку
+                    profileName.innerText = 'Гость';
+                    profileId.innerText = 'ID: не определен';
+                    profileAvatar.innerHTML = '👤';
                 }
                 
                 console.log("Профиль загружен");
@@ -2320,44 +2278,57 @@
         }
         
         function payTonInvoice() {
-            const tg = window.Telegram.WebApp;
-            tg.openLink(`ton://transfer/${TON_WALLET}?amount=${currentInvoice.amount * 1000000000}`);
-            
-            setTimeout(() => {
-                if (confirm('Вы оплатили счет?')) {
-                    currentUser.ton += currentInvoice.amount;
-                    updateUI();
-                    closeCheck();
-                    alert(`✅ Баланс пополнен на ${currentInvoice.amount} TON`);
-                }
-            }, 5000);
+            if (window.Telegram?.WebApp) {
+                const tg = window.Telegram.WebApp;
+                tg.openLink(`ton://transfer/${TON_WALLET}?amount=${currentInvoice.amount * 1000000000}`);
+                
+                setTimeout(() => {
+                    if (confirm('Вы оплатили счет?')) {
+                        currentUser.ton += currentInvoice.amount;
+                        updateUI();
+                        closeCheck();
+                        alert(`✅ Баланс пополнен на ${currentInvoice.amount} TON`);
+                    }
+                }, 5000);
+            } else {
+                alert('Оплата TON доступна только в Telegram');
+                closeCheck();
+            }
         }
         
         function payStarsInvoice() {
-            const tg = window.Telegram.WebApp;
-            
-            if (tg.openInvoice) {
-                const invoiceData = {
-                    title: 'Пополнение Stars',
-                    description: `Покупка ${currentInvoice.amount} Stars`,
-                    payload: JSON.stringify({
-                        user_id: currentUser.id,
-                        amount: currentInvoice.amount
-                    }),
-                    currency: 'XTR',
-                    prices: [{ label: 'Stars', amount: currentInvoice.amount }]
-                };
+            if (window.Telegram?.WebApp) {
+                const tg = window.Telegram.WebApp;
                 
-                tg.openInvoice(invoiceData, (status) => {
-                    if (status === 'paid') {
-                        currentUser.stars += currentInvoice.amount;
-                        updateUI();
-                        alert(`✅ Куплено ${currentInvoice.amount} Stars`);
-                    } else {
-                        alert('❌ Платёж отменён');
-                    }
+                if (tg.openInvoice) {
+                    const invoiceData = {
+                        title: 'Пополнение Stars',
+                        description: `Покупка ${currentInvoice.amount} Stars`,
+                        payload: JSON.stringify({
+                            user_id: currentUser.id,
+                            amount: currentInvoice.amount
+                        }),
+                        currency: 'XTR',
+                        prices: [{ label: 'Stars', amount: currentInvoice.amount }]
+                    };
+                    
+                    tg.openInvoice(invoiceData, (status) => {
+                        if (status === 'paid') {
+                            currentUser.stars += currentInvoice.amount;
+                            updateUI();
+                            alert(`✅ Куплено ${currentInvoice.amount} Stars`);
+                        } else {
+                            alert('❌ Платёж отменён');
+                        }
+                        closeCheck();
+                    });
+                } else {
+                    alert('Telegram Stars не поддерживаются в этой версии');
                     closeCheck();
-                });
+                }
+            } else {
+                alert('Оплата Stars доступна только в Telegram');
+                closeCheck();
             }
         }
         
