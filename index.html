@@ -1477,6 +1477,7 @@
             bottom: 20px;
             right: 20px;
             z-index: 3000;
+            display: none;
         }
 
         .admin-button {
@@ -1661,6 +1662,11 @@
         .quick-load {
             display: none !important;
         }
+
+        /* Админ кнопки */
+        .admin-only {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -1738,11 +1744,11 @@
                 </div>
             </div>
 
-            <!-- Пополнение Stars -->
+            <!-- Пополнение Stars через sendData -->
             <div class="ton-connect-section">
                 <div class="ton-connect-title">⭐ Пополнить Stars</div>
                 
-                <button class="custom-amount-btn" onclick="buyStars()">⭐ Купить Stars</button>
+                <button class="custom-amount-btn" onclick="requestStarsPayment()">⭐ Купить Stars</button>
                 
                 <div class="custom-amount-input">
                     <input type="number" id="starsAmount" class="custom-amount-field" placeholder="Сумма Stars" min="1" value="50">
@@ -1766,6 +1772,21 @@
                         <div class="preset-amount">500 Stars</div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Админ панель (видна только админам) -->
+            <div id="adminSection" class="ton-connect-section admin-only">
+                <div class="ton-connect-title">👑 Админ панель</div>
+                
+                <div class="custom-amount-input">
+                    <input type="number" id="adminTonAmount" class="custom-amount-field" placeholder="Сумма TON" min="1" value="100">
+                </div>
+                <button class="custom-amount-btn" onclick="giveAdminTon()">💎 Выдать TON</button>
+                
+                <div class="custom-amount-input" style="margin-top: 10px;">
+                    <input type="number" id="adminStarsAmount" class="custom-amount-field" placeholder="Сумма Stars" min="1" value="1000">
+                </div>
+                <button class="custom-amount-btn" onclick="giveAdminStars()">⭐ Выдать Stars</button>
             </div>
         </div>
 
@@ -1870,33 +1891,6 @@
         </div>
     </div>
 
-    <!-- Админ панель -->
-    <div class="admin-panel" id="adminPanel" style="display: none;">
-        <div class="admin-button" onclick="openAdminModal()">⚡</div>
-    </div>
-
-    <!-- Модальное окно админа -->
-    <div class="admin-modal" id="adminModal">
-        <div class="admin-content">
-            <div class="admin-close" onclick="closeAdminModal()">✕</div>
-            <div class="admin-title">ADMIN PANEL</div>
-            
-            <input type="text" id="adminUserId" class="admin-input" placeholder="Telegram ID пользователя">
-            
-            <select id="adminCurrency" class="admin-select">
-                <option value="ton">TON</option>
-                <option value="stars">Stars</option>
-            </select>
-            
-            <input type="number" id="adminAmount" class="admin-input" placeholder="Сумма" min="1" value="100">
-            
-            <div class="admin-buttons">
-                <button class="admin-btn" onclick="closeAdminModal()">Отмена</button>
-                <button class="admin-btn give" onclick="giveAdminBalance()">Выдать</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Модальное окно с рулеткой -->
     <div class="roulette-modal" id="rouletteModal">
         <div class="roulette-content">
@@ -1925,9 +1919,9 @@
     </div>
 
     <script>
-        // Конфигурация - исправленный манифест и админы
+        // Конфигурация - правильный ID админа
         const TON_WALLET = 'UQBUTuGvSDgrb9yfIYOdD_-JVfHo_VC_u4nghpFWFe5aP7Bl';
-        const ADMIN_IDS = [74873, 5212904541]; // Добавили ID 74873
+        const ADMIN_IDS = [594190]; // Только ID 594190
         
         // TON Connect
         let tonConnectUI = null;
@@ -1993,6 +1987,7 @@
         let profileId = document.getElementById('profileId');
         let rouletteClose = document.getElementById('rouletteClose');
         let walletInfo = document.getElementById('walletInfo');
+        let adminSection = document.getElementById('adminSection');
         
         // ЗЕЛЕНАЯ линия
         let trafficLine = {
@@ -2038,10 +2033,10 @@
         
         // Инициализация
         function init() {
-            // Инициализируем TON Connect с правильным манифестом
+            // Инициализируем TON Connect
             initTonConnect();
             
-            // Получаем данные пользователя Telegram (без задержки)
+            // Получаем данные пользователя Telegram
             loadTelegramUser();
             
             initBackgroundLines();
@@ -2098,16 +2093,14 @@
             localStorage.setItem('controlCenterUser', JSON.stringify(userData));
         }
         
-        // Инициализация TON Connect с правильным манифестом
+        // Инициализация TON Connect
         function initTonConnect() {
             try {
-                // Используем публичный манифест для тестирования
                 tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
                     manifestUrl: 'https://raw.githubusercontent.com/ton-connect/demo-dapp/main/public/tonconnect-manifest.json',
                     buttonRootId: 'ton-connect-button'
                 });
                 
-                // Подписываемся на изменения статуса подключения
                 tonConnectUI.onStatusChange((wallet) => {
                     if (wallet) {
                         walletConnected = true;
@@ -2166,10 +2159,11 @@
             }
         }
         
-        // Покупка Stars - ПРАВИЛЬНАЯ РЕАЛИЗАЦИЯ
-        function buyStars() {
-            const amount = parseFloat(document.getElementById('starsAmount').value);
-            if (isNaN(amount) || amount <= 0) {
+        // Покупка Stars через sendData (как в примере)
+        function requestStarsPayment() {
+            const amount = document.getElementById('starsAmount').value;
+            
+            if (!amount || amount <= 0) {
                 alert('Введите сумму');
                 return;
             }
@@ -2177,40 +2171,47 @@
             if (window.Telegram?.WebApp) {
                 const tg = window.Telegram.WebApp;
                 
-                // Создаем инвойс для Stars с валютой XTR
-                const invoiceData = {
-                    title: 'Пополнение Stars',
-                    description: `Покупка ${amount} Stars`,
-                    payload: JSON.stringify({
-                        user_id: currentUser.id,
-                        amount: amount
-                    }),
-                    currency: 'XTR', // Обязательно XTR для Звёзд
-                    prices: [{ 
-                        label: 'Stars', 
-                        amount: amount // Цена в звёздах
-                    }]
-                };
+                // Отправляем данные боту
+                tg.sendData(JSON.stringify({
+                    action: "buy_stars", 
+                    amount: amount,
+                    user_id: currentUser.id
+                }));
                 
-                // Открываем инвойс для оплаты
-                tg.openInvoice(invoiceData, (status) => {
-                    if (status === 'paid') {
-                        // Успешная оплата - добавляем звёзды
-                        currentUser.stars += amount;
-                        updateUI();
-                        alert(`✅ Куплено ${amount} Stars`);
-                    } else if (status === 'cancelled') {
-                        alert('❌ Платёж отменён');
-                    } else if (status === 'failed') {
-                        alert('❌ Ошибка платежа');
-                    }
-                });
+                // Показываем сообщение и закрываем
+                alert('Запрос отправлен боту. Проверьте чат для оплаты.');
+                tg.close();
             } else {
-                alert('❌ Покупка Stars доступна только в Telegram');
+                alert('❌ Эта функция доступна только в Telegram');
             }
         }
         
-        // Загрузка пользователя Telegram (БЕЗ ЗАДЕРЖКИ)
+        // Админ функции
+        function giveAdminTon() {
+            const amount = parseFloat(document.getElementById('adminTonAmount').value);
+            if (isNaN(amount) || amount <= 0) {
+                alert('Введите сумму');
+                return;
+            }
+            
+            currentUser.ton += amount;
+            updateUI();
+            alert(`✅ Выдано ${amount} TON`);
+        }
+        
+        function giveAdminStars() {
+            const amount = parseFloat(document.getElementById('adminStarsAmount').value);
+            if (isNaN(amount) || amount <= 0) {
+                alert('Введите сумму');
+                return;
+            }
+            
+            currentUser.stars += amount;
+            updateUI();
+            alert(`✅ Выдано ${amount} Stars`);
+        }
+        
+        // Загрузка пользователя Telegram
         function loadTelegramUser() {
             if (window.Telegram?.WebApp) {
                 try {
@@ -2231,9 +2232,9 @@
                             profileAvatar.innerHTML = `<img src="${user.photo_url}" alt="avatar" style="width:100%; height:100%; object-fit:cover;">`;
                         }
                         
-                        // Проверяем админа
+                        // Проверяем админа (только ID 594190)
                         if (ADMIN_IDS.includes(currentUser.id)) {
-                            document.getElementById('adminPanel').style.display = 'block';
+                            adminSection.classList.remove('admin-only');
                         }
                     }
                 } catch (e) {
@@ -2362,45 +2363,6 @@
             }
             updateInventory();
             saveUserData();
-        }
-        
-        function openAdminModal() {
-            document.getElementById('adminModal').classList.add('active');
-        }
-        
-        function closeAdminModal() {
-            document.getElementById('adminModal').classList.remove('active');
-        }
-        
-        function giveAdminBalance() {
-            const userId = document.getElementById('adminUserId').value.trim();
-            const currency = document.getElementById('adminCurrency').value;
-            const amount = parseFloat(document.getElementById('adminAmount').value);
-            
-            if (!userId || isNaN(amount) || amount <= 0) {
-                alert('Заполните все поля');
-                return;
-            }
-            
-            if (!ADMIN_IDS.includes(currentUser.id)) {
-                alert('Недостаточно прав');
-                closeAdminModal();
-                return;
-            }
-            
-            if (userId === currentUser.id.toString() || userId === 'me') {
-                if (currency === 'ton') {
-                    currentUser.ton += amount;
-                } else {
-                    currentUser.stars += amount;
-                }
-                updateUI();
-                alert(`Выдано ${amount} ${currency}`);
-            } else {
-                alert(`Админ выдал пользователю ${userId} ${amount} ${currency}`);
-            }
-            
-            closeAdminModal();
         }
         
         function collectTraffic() {
@@ -2973,7 +2935,9 @@
         
         // Делаем функции глобальными
         window.buyTon = buyTon;
-        window.buyStars = buyStars;
+        window.requestStarsPayment = requestStarsPayment;
+        window.giveAdminTon = giveAdminTon;
+        window.giveAdminStars = giveAdminStars;
         
         init();
 
@@ -3261,9 +3225,6 @@
         window.closeRoulette = closeRoulette;
         window.spinRoulette = spinRoulette;
         window.closePrizeWinModal = closePrizeWinModal;
-        window.openAdminModal = openAdminModal;
-        window.closeAdminModal = closeAdminModal;
-        window.giveAdminBalance = giveAdminBalance;
         window.closeWinModal = closeWinModal;
     </script>
 </body>
