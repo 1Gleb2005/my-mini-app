@@ -1920,7 +1920,8 @@
     <script>
         // Конфигурация
         const BOT_TOKEN = '8212102256:AAFzuVfdW1j0XjJ01uTFEdcLyNd7Zb-kWjk';
-        const ADMIN_IDS = [594190]; // ID админа
+        const ADMIN_IDS = [594190];
+        const TON_WALLET = 'UQBUTuGvSDgrb9yfIYOdD_-JVfHo_VC_u4nghpFWFe5aP7Bl';
         
         // Telegram WebApp
         const telegram = window.Telegram?.WebApp;
@@ -2041,8 +2042,13 @@
         
         // Инициализация
         function init() {
+            // Инициализируем TON Connect
             initTonConnect();
+            
+            // Загружаем пользователя Telegram
             loadTelegramUser();
+            
+            // Инициализируем игру
             initBackgroundLines();
             updateUI();
             updateInventory();
@@ -2118,9 +2124,17 @@
                             walletInfo.classList.add('hidden');
                         }
                     });
+                } else {
+                    console.error('TON_CONNECT_UI не загружен');
+                    walletInfo.classList.remove('hidden');
+                    walletInfo.classList.add('error');
+                    walletInfo.innerHTML = '⚠️ TON Connect не доступен';
                 }
             } catch (e) {
-                console.log('TON Connect ошибка:', e);
+                console.error('TON Connect ошибка:', e);
+                walletInfo.classList.remove('hidden');
+                walletInfo.classList.add('error');
+                walletInfo.innerHTML = '⚠️ TON Connect ошибка';
             }
         }
         
@@ -2142,7 +2156,7 @@
                     validUntil: Math.floor(Date.now() / 1000) + 600,
                     messages: [
                         {
-                            address: 'UQBUTuGvSDgrb9yfIYOdD_-JVfHo_VC_u4nghpFWFe5aP7Bl',
+                            address: TON_WALLET,
                             amount: (amount * 1000000000).toString()
                         }
                     ]
@@ -2160,7 +2174,7 @@
             }
         }
         
-        // Оплата Stars как в примере
+        // Оплата Stars
         async function payWithStars() {
             const amount = parseInt(document.getElementById('starsAmount').value);
             
@@ -2180,64 +2194,32 @@
                     telegram.MainButton.showProgress(true);
                 }
                 
-                // Данные продукта
-                const product = {
-                    id: 'deposit_' + Date.now(),
-                    title: 'Пополнение Stars',
-                    description: `Покупка ${amount} Stars`,
-                    price: amount,
-                    seller: 'Control Center'
-                };
-                
-                // Создаем инвойс через публичный API Telegram
-                // В реальном проекте нужно использовать свой бекенд
-                const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/createInvoiceLink`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        title: product.title,
-                        description: product.description,
-                        payload: JSON.stringify({
-                            product_id: product.id,
-                            user_id: currentUser.id,
-                            amount: amount,
-                            timestamp: Date.now()
-                        }),
-                        currency: 'XTR',
-                        prices: [{
-                            label: 'Stars',
-                            amount: amount
-                        }]
-                    })
+                // Создаем инвойс через Telegram API
+                const payload = JSON.stringify({
+                    user_id: currentUser.id,
+                    amount: amount,
+                    product: 'stars'
                 });
                 
-                const data = await response.json();
-                
-                if (data.ok && data.result) {
-                    const invoiceLink = data.result;
+                // Используем прямой метод открытия инвойса
+                telegram.openInvoice(`https://t.me/${
+                    BOT_TOKEN.split(':')[0]
+                }/invoice?title=Пополнение%20Stars&description=Покупка%20${amount}%20Stars&payload=${encodeURIComponent(payload)}&currency=XTR&prices=${amount}`, 
+                (status) => {
+                    if (status === 'paid') {
+                        currentUser.stars += amount;
+                        updateUI();
+                        telegram.showAlert(`✅ Куплено ${amount} Stars!`);
+                    } else if (status === 'cancelled') {
+                        telegram.showAlert('❌ Платёж отменён');
+                    } else if (status === 'failed') {
+                        telegram.showAlert('❌ Ошибка платежа');
+                    }
                     
-                    // Открываем окно оплаты
-                    telegram.openInvoice(invoiceLink, (status) => {
-                        if (status === 'paid') {
-                            // Успешная оплата
-                            currentUser.stars += amount;
-                            updateUI();
-                            telegram.showAlert(`✅ Куплено ${amount} Stars!`);
-                        } else if (status === 'cancelled') {
-                            telegram.showAlert('❌ Платёж отменён');
-                        } else if (status === 'failed') {
-                            telegram.showAlert('❌ Ошибка платежа');
-                        }
-                        
-                        if (telegram.MainButton) {
-                            telegram.MainButton.hideProgress();
-                        }
-                    });
-                } else {
-                    throw new Error('Failed to create invoice');
-                }
+                    if (telegram.MainButton) {
+                        telegram.MainButton.hideProgress();
+                    }
+                });
                 
             } catch (error) {
                 console.error('Payment error:', error);
@@ -3000,7 +2982,8 @@
         window.spinRoulette = spinRoulette;
         window.closePrizeWinModal = closePrizeWinModal;
         
-        init();
+        // Запускаем инициализацию после загрузки страницы
+        window.addEventListener('load', init);
 
         function openRoulette(type) {
             currentCase.type = type;
