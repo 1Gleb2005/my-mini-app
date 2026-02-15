@@ -552,6 +552,7 @@
             border: 2px solid #8a2be2;
             box-shadow: 0 0 30px #8a2be2;
             overflow: hidden;
+            transition: all 0.3s ease;
         }
 
         .profile-avatar img {
@@ -572,6 +573,12 @@
             color: #8a2be2;
             font-size: 12px;
             margin-bottom: 16px;
+        }
+
+        .profile-loading {
+            color: #ffd966;
+            font-size: 14px;
+            animation: pulse 1.5s infinite;
         }
 
         /* TON Connect стили */
@@ -845,6 +852,11 @@
             box-shadow: 0 0 20px #8a2be2;
         }
 
+        .check-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .check-close {
             position: absolute;
             top: 10px;
@@ -865,6 +877,12 @@
         .check-close:hover {
             background: #8a2be2;
             color: white;
+        }
+
+        .check-close.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
         }
 
         /* Кейсы */
@@ -1294,6 +1312,12 @@
             color: white;
         }
 
+        .roulette-close.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
         /* Инвентарь */
         .inventory-grid {
             display: grid;
@@ -1644,7 +1668,7 @@
         <div id="profile-section" class="section active">
             <div class="profile-header">
                 <div class="profile-avatar" id="profileAvatar">
-                    👤
+                    <div class="profile-loading" id="profileLoading">⏳ Загрузка...</div>
                 </div>
                 <div class="profile-name" id="profileName">Загрузка...</div>
                 <div class="profile-id" id="profileId">ID: ...</div>
@@ -1687,7 +1711,7 @@
             <div class="ton-connect-section">
                 <div class="ton-connect-title">⭐ Пополнить Stars</div>
                 
-                <button class="custom-amount-btn" onclick="createStarsInvoice()">⭐ Создать счет</button>
+                <button class="custom-amount-btn" onclick="createStarsInvoice()">⭐ Купить Stars</button>
                 
                 <div class="custom-amount-input">
                     <input type="number" id="starsAmount" class="custom-amount-field" placeholder="Сумма Stars" min="1" value="50">
@@ -1845,7 +1869,7 @@
     <!-- Модальное окно с чеком -->
     <div class="check-modal" id="checkModal">
         <div class="check-content">
-            <div class="check-close" onclick="closeCheck()">✕</div>
+            <div class="check-close" id="checkClose" onclick="closeCheck()">✕</div>
             <div class="check-icon" id="checkIcon">💰</div>
             <div class="check-title" id="checkTitle">Счет на оплату</div>
             <div class="check-details">Сумма к оплате:</div>
@@ -1853,7 +1877,7 @@
             <div class="check-address" id="checkAddress">...</div>
             <div class="check-buttons">
                 <button class="check-btn" onclick="closeCheck()">Отмена</button>
-                <button class="check-btn pay" id="checkPayBtn" onclick="payInvoice()">Оплатить</button>
+                <button class="check-btn pay" id="checkPayBtn" onclick="processPayment()">Оплатить</button>
             </div>
         </div>
     </div>
@@ -1861,7 +1885,7 @@
     <!-- Модальное окно с рулеткой -->
     <div class="roulette-modal" id="rouletteModal">
         <div class="roulette-content">
-            <div class="roulette-close" onclick="closeRoulette()">✕</div>
+            <div class="roulette-close" id="rouletteClose" onclick="closeRoulette()">✕</div>
             <div class="roulette-title" id="rouletteTitle">Кейс</div>
             
             <div class="prize-grid" id="prizeGrid"></div>
@@ -1906,16 +1930,16 @@
         // Активные ставки
         let activeBets = [];
         
-        // Фоновые линии для бесконечного движения (из правого верхнего в левый нижний)
+        // Фоновые линии
         let backgroundLines = [];
         const BACKGROUND_LINE_COUNT = 30;
         
-        // Пользователь (НУЛЕВОЙ БАЛАНС)
+        // Пользователь
         let currentUser = {
-            id: 12345,
+            id: null,
             firstName: 'Игрок',
             lastName: '',
-            username: 'player',
+            username: '',
             photoUrl: null,
             ton: 0,
             stars: 0,
@@ -1951,16 +1975,22 @@
         let winModal = document.getElementById('winModal');
         let winEquation = document.getElementById('winEquation');
         let winTotal = document.getElementById('winTotal');
+        let profileLoading = document.getElementById('profileLoading');
+        let profileAvatar = document.getElementById('profileAvatar');
+        let profileName = document.getElementById('profileName');
+        let profileId = document.getElementById('profileId');
+        let rouletteClose = document.getElementById('rouletteClose');
+        let checkClose = document.getElementById('checkClose');
         
-        // ЗЕЛЕНАЯ линия - доходит до 75%
+        // ЗЕЛЕНАЯ линия
         let trafficLine = {
             startX: 30,
             startY: 330,
             endX: 300,
             endY: 30,
             progress: 0,
-            maxProgress: 0.75, // Максимум 75%
-            speed: 0.0004, // Медленная скорость подъема
+            maxProgress: 0.75,
+            speed: 0.0004,
             width: 14,
             alpha: 1.0
         };
@@ -1974,10 +2004,8 @@
         let userBetMultiplier = 1.0;
         let userFixedMultiplier = 1.0;
         
-        // Флаг для секретной функции (большая ставка)
+        // Флаг для секретной функции
         let isBigBetActive = false;
-        
-        // Флаг для отслеживания, был ли уже краш в этом раунде
         let hasCrashedThisRound = false;
         
         // Фиксация ставки
@@ -1990,6 +2018,9 @@
         // Имена ботов
         let botNames = ['CryptoKing', 'MoonHunter', 'RocketMan', 'StarGazer', 'TONWhale', 'LuckyBot', 'RiskTaker', 'CoinMaster'];
         
+        // Флаг для рулетки
+        let isRouletteSpinning = false;
+        
         // Инициализация
         function init() {
             initBackgroundLines();
@@ -2001,6 +2032,58 @@
             setTimeout(() => {
                 resizeCanvas();
             }, 100);
+            
+            loadTelegramProfile();
+        }
+        
+        // Долгая загрузка профиля
+        function loadTelegramProfile() {
+            console.log("Начинаем загрузку профиля...");
+            
+            profileLoading.style.display = 'block';
+            profileAvatar.innerHTML = '<div class="profile-loading">⏳ Загрузка...</div>';
+            profileName.innerText = 'Загрузка...';
+            profileId.innerText = 'ID: ...';
+            
+            setTimeout(() => {
+                if (window.Telegram?.WebApp) {
+                    const tg = window.Telegram.WebApp;
+                    tg.ready();
+                    tg.expand();
+                    
+                    const user = tg.initDataUnsafe?.user;
+                    if (user) {
+                        currentUser.id = user.id;
+                        currentUser.firstName = user.first_name || 'Игрок';
+                        currentUser.lastName = user.last_name || '';
+                        currentUser.username = user.username || '';
+                        
+                        profileName.innerText = currentUser.firstName + (currentUser.lastName ? ' ' + currentUser.lastName : '');
+                        profileId.innerText = `ID: ${currentUser.id}`;
+                        
+                        if (user.photo_url) {
+                            profileAvatar.innerHTML = `<img src="${user.photo_url}" alt="avatar" style="width:100%; height:100%; object-fit:cover;">`;
+                        } else {
+                            profileAvatar.innerHTML = '👤';
+                        }
+                        
+                        if (ADMIN_IDS.includes(currentUser.id)) {
+                            document.getElementById('adminPanel').style.display = 'block';
+                        }
+                    } else {
+                        profileName.innerText = 'Гость';
+                        profileId.innerText = 'ID: не определен';
+                        profileAvatar.innerHTML = '👤';
+                    }
+                } else {
+                    profileName.innerText = 'Демо-режим';
+                    profileId.innerText = 'ID: 12345';
+                    profileAvatar.innerHTML = '👤';
+                }
+                
+                profileLoaded = true;
+                console.log("Профиль загружен");
+            }, 3000);
         }
         
         function initBackgroundLines() {
@@ -2025,7 +2108,6 @@
             trafficLine.endX = canvas.width - 30;
             trafficLine.endY = 30;
             
-            // Обновляем позиции фоновых линий
             for (let i = 0; i < backgroundLines.length; i++) {
                 backgroundLines[i].x = Math.random() * canvas.width;
                 backgroundLines[i].y = Math.random() * canvas.height;
@@ -2192,14 +2274,9 @@
                         currentUser.ton += currentInvoice.amount;
                         updateUI();
                         closeCheck();
-                        alert(`Баланс пополнен на ${currentInvoice.amount} TON`);
+                        alert(`✅ Баланс пополнен на ${currentInvoice.amount} TON`);
                     }
                 }, 5000);
-            } else {
-                currentUser.ton += currentInvoice.amount;
-                updateUI();
-                closeCheck();
-                alert(`Баланс пополнен на ${currentInvoice.amount} TON`);
             }
         }
         
@@ -2207,21 +2284,33 @@
             if (window.Telegram?.WebApp) {
                 const tg = window.Telegram.WebApp;
                 
-                if (confirm(`Купить ${currentInvoice.amount} Stars?`)) {
-                    currentUser.stars += currentInvoice.amount;
-                    updateUI();
-                    closeCheck();
-                    alert(`Куплено ${currentInvoice.amount} Stars`);
+                if (tg.openInvoice) {
+                    const invoiceData = {
+                        title: 'Пополнение Stars',
+                        description: `Покупка ${currentInvoice.amount} Stars`,
+                        payload: JSON.stringify({
+                            user_id: currentUser.id,
+                            amount: currentInvoice.amount
+                        }),
+                        currency: 'XTR',
+                        prices: [{ label: 'Stars', amount: currentInvoice.amount }]
+                    };
+                    
+                    tg.openInvoice(invoiceData, (status) => {
+                        if (status === 'paid') {
+                            currentUser.stars += currentInvoice.amount;
+                            updateUI();
+                            alert(`✅ Куплено ${currentInvoice.amount} Stars`);
+                        } else {
+                            alert('❌ Платёж отменён');
+                        }
+                        closeCheck();
+                    });
                 }
-            } else {
-                currentUser.stars += currentInvoice.amount;
-                updateUI();
-                closeCheck();
-                alert(`Баланс пополнен на ${currentInvoice.amount} Stars`);
             }
         }
         
-        function payInvoice() {
+        function processPayment() {
             if (currentInvoice.currency === 'ton') {
                 payTonInvoice();
             } else {
@@ -2250,7 +2339,6 @@
             }
             
             const currency = userBetCurrency;
-            // РЕАЛЬНЫЙ ЗАРАБОТОК С ТРАФИКА: ставка × множитель
             const reward = userBetAmount * gameState.multiplier;
             
             if (currency === 'ton') {
@@ -2278,44 +2366,34 @@
             hist.prepend(item);
         }
         
-        // НОВАЯ функция для генерации точки краша с нужными процентами
         function getRandomCrashPoint() {
             const r = Math.random() * 100;
             
-            // 1.0x - 1.5x: часто (40%)
             if (r < 40) {
                 return 1.0 + Math.random() * 0.5;
             }
-            // 1.5x - 2.0x: часто (30%)
             else if (r < 70) {
                 return 1.5 + Math.random() * 0.5;
             }
-            // 2.0x - 2.5x: средне (15%)
             else if (r < 85) {
                 return 2.0 + Math.random() * 0.5;
             }
-            // 2.5x - 3.0x: редко (10%)
             else if (r < 95) {
                 return 2.5 + Math.random() * 0.5;
             }
-            // 3.0x - 5.0x: очень редко (4%)
             else if (r < 99) {
                 return 3.0 + Math.random() * 2.0;
             }
-            // 5.0x - 10.0x: экстремально редко (1%)
             else {
                 return 5.0 + Math.random() * 5.0;
             }
         }
         
         function startGameLoop() {
-            // Сбрасываем флаги для нового раунда
             hasCrashedThisRound = false;
             
-            // Устанавливаем точку краша в зависимости от наличия большой ставки
             if (isBigBetActive) {
                 gameState.crashPoint = 1.01;
-                console.log("БОЛЬШАЯ СТАВКА! Краш на 1.01x");
             } else {
                 gameState.crashPoint = getRandomCrashPoint();
             }
@@ -2328,7 +2406,6 @@
             gameState.crashTimer = 10;
             gameState.trafficCollected = false;
             
-            // Сбрасываем прогресс зеленой линии для нового раунда
             trafficLine.progress = 0;
             
             crashTimerEl.classList.add('active');
@@ -2341,11 +2418,9 @@
                     crashTimerEl.innerText = `Следующий раунд: ${Math.max(0, gameState.crashTimer).toFixed(1)}с`;
                     
                     if (gameState.crashTimer <= 0) {
-                        // Начинаем новый раунд
                         gameState.isCrashActive = false;
                         gameState.roundActive = true;
                         
-                        // Устанавливаем точку краша для нового раунда
                         if (isBigBetActive) {
                             gameState.crashPoint = 1.01;
                         } else {
@@ -2357,7 +2432,6 @@
                         gameState.trafficCollected = false;
                         crashTimerEl.classList.remove('active');
                         
-                        // Сбрасываем прогресс зеленой линии
                         trafficLine.progress = 0;
                         
                         activeBets = activeBets.filter(bet => bet.userId === (currentUser.id || 'user'));
@@ -2367,7 +2441,6 @@
                         updateUI();
                     }
                 } else if (gameState.roundActive) {
-                    // УСКОРЕННЫЙ набор иксов после 6
                     let speed;
                     if (gameState.multiplier < 2) {
                         speed = 0.0006;
@@ -2376,20 +2449,16 @@
                     } else if (gameState.multiplier < 6) {
                         speed = 0.0004;
                     } else {
-                        speed = 0.0008; // УСКОРЕНИЕ после 6x
+                        speed = 0.0008;
                     }
                     
                     gameState.multiplier += speed;
                     
-                    // ОСОБАЯ ПРОВЕРКА для больших ставок
                     if (isBigBetActive && !hasCrashedThisRound) {
-                        // Проверяем, достиг ли множитель 1.01 или превысил его
                         if (gameState.multiplier >= 1.01) {
-                            // Фиксируем краш ровно на 1.01
                             gameState.multiplier = 1.01;
                             hasCrashedThisRound = true;
                             
-                            // Завершаем раунд
                             gameState.roundActive = false;
                             gameState.isCrashActive = true;
                             gameState.crashTimer = 10;
@@ -2417,14 +2486,12 @@
                                 hist.prepend(item);
                             }
                             
-                            // Сбрасываем флаг большой ставки после краша
                             isBigBetActive = false;
                             
                             updateUI();
                             updateBetButtonState();
                         }
                     } else {
-                        // Обычная проверка краша
                         if (gameState.multiplier >= gameState.crashPoint) {
                             gameState.roundActive = false;
                             gameState.isCrashActive = true;
@@ -2461,12 +2528,10 @@
                     gameState.rocketY -= speed * 0.5;
                     if (gameState.rocketY < 0.1) gameState.rocketY = 0.1;
                     
-                    // Движение зеленой линии (до 75% максимум)
                     if (trafficLine.progress < trafficLine.maxProgress) {
                         trafficLine.progress += trafficLine.speed;
                     }
                     
-                    // Движение фоновых линий ИЗ ПРАВОГО ВЕРХНЕГО В ЛЕВЫЙ НИЖНИЙ
                     updateBackgroundLines();
                 }
                 
@@ -2484,11 +2549,9 @@
             for (let i = 0; i < backgroundLines.length; i++) {
                 const line = backgroundLines[i];
                 
-                // Движение из правого верхнего в левый нижний
                 line.x -= line.speed;
                 line.y += line.speed;
                 
-                // Сброс если ушли за пределы
                 if (line.x < -50 || line.y > canvas.height + 50) {
                     line.x = canvas.width + 50;
                     line.y = -50;
@@ -2527,7 +2590,6 @@
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Рисуем движущиеся фоновые линии
             ctx.save();
             for (let i = 0; i < backgroundLines.length; i++) {
                 const line = backgroundLines[i];
@@ -2541,7 +2603,6 @@
             }
             ctx.restore();
             
-            // ЗЕЛЕНАЯ линия (до 75% максимум)
             const color = '#2ecc71';
             
             const currentX = trafficLine.startX + (trafficLine.endX - trafficLine.startX) * trafficLine.progress;
@@ -2655,10 +2716,8 @@
                 return;
             }
             
-            // Проверка на секретную функцию (ставка ≥50 TON)
             if (currentCurr === 'ton' && amt >= 50) {
                 isBigBetActive = true;
-                console.log("Активирована большая ставка! Краш на 1.01x в следующем раунде");
             }
             
             currentUser[currentCurr] -= amt;
@@ -2710,7 +2769,6 @@
                 return;
             }
             
-            // ПРАВИЛЬНОЕ зачисление: ставка × множитель
             let winMultiplier;
             if (fixBetActive && userFixedMultiplier > 1) {
                 winMultiplier = userFixedMultiplier;
@@ -2718,7 +2776,6 @@
                 winMultiplier = gameState.multiplier;
             }
             
-            // ПРОСТАЯ ФОРМУЛА: ставка × множитель
             const win = userBetAmount * winMultiplier;
             
             if (userBetCurrency === 'ton') {
@@ -2836,7 +2893,6 @@
         init();
 
         function openRoulette(type) {
-            console.log('Opening roulette:', type);
             currentCase.type = type;
             
             let prizes = [];
@@ -2942,11 +2998,13 @@
         }
 
         function closeRoulette() {
-            if (rouletteInterval) {
-                clearTimeout(rouletteInterval);
-                rouletteInterval = null;
+            if (!isRouletteSpinning) {
+                if (rouletteInterval) {
+                    clearTimeout(rouletteInterval);
+                    rouletteInterval = null;
+                }
+                document.getElementById('rouletteModal').classList.remove('active');
             }
-            document.getElementById('rouletteModal').classList.remove('active');
         }
 
         let rouletteInterval = null;
@@ -2985,6 +3043,10 @@
             document.getElementById('roulettePayBtn').disabled = true;
             document.getElementById('roulettePayBtn').innerText = 'Крутится...';
             
+            // Блокируем кнопку закрытия
+            isRouletteSpinning = true;
+            rouletteClose.classList.add('disabled');
+            
             let currentIndex = 0;
             const startTime = Date.now();
             const totalTime = 5000;
@@ -3014,6 +3076,10 @@
                     
                     document.getElementById('roulettePayBtn').disabled = false;
                     document.getElementById('roulettePayBtn').innerText = 'Крутить';
+                    
+                    // Разблокируем кнопку закрытия
+                    isRouletteSpinning = false;
+                    rouletteClose.classList.remove('disabled');
                     return;
                 }
                 
@@ -3114,7 +3180,7 @@
         window.closePrizeWinModal = closePrizeWinModal;
         window.createTonInvoice = createTonInvoice;
         window.createStarsInvoice = createStarsInvoice;
-        window.payInvoice = payInvoice;
+        window.processPayment = processPayment;
         window.closeCheck = closeCheck;
         window.collectTraffic = collectTraffic;
         window.openAdminModal = openAdminModal;
